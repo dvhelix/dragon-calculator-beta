@@ -403,11 +403,13 @@ if (pver !== "v3") {
 let pendComb = [];
 
 if (pver === "v3") {
-  // 수동입력 모드: 펜던트 예측 안 하고 직접 입력값 사용
+  // 수동입력 모드: pendComb 구조를 자동 버전과 맞춰줌
   const ph = Number(document.getElementById("pend_manual_hp")?.value || 0) / 100;
   const pa = Number(document.getElementById("pend_manual_atk")?.value || 0) / 100;
   const pd = Number(document.getElementById("pend_manual_df")?.value || 0) / 100;
-  pendComb = [[new Stats(ph, pa, pd)]];
+
+  // 자동 조합 버전처럼 2D 배열 형태로 만듦
+  pendComb = [[[ph, pa, pd]]];
 } else {
   // 기존 Ver1, Ver2 자동조합 로직
   pendComb = genPend(
@@ -439,12 +441,14 @@ if (pver === "v3") {
               enchDir === "df" ? ench / 100 : 0
             );
             const accPct = new Stats(ah + enchPct.hp, aa + enchPct.atk, ad + enchPct.df);
-
             for (const pend of pendComb) {
               const ph = pend.reduce((s, v) => s + v[0], 0);
               const pa = pend.reduce((s, v) => s + v[1], 0);
               const pd = pend.reduce((s, v) => s + v[2], 0);
-              const pendStat = new Stats(ph / 100, pa / 100, pd / 100);
+              const pendStat =
+                pver === "v3"
+                ? new Stats(ph, pa, pd)
+                : new Stats(ph / 100, pa / 100, pd / 100);  // Ver1,2는 그대로
 
               const [fin, E, B] = calcPredict(base, gemTot, pot, accPct, pendStat, spf, spp, spe, col, bf, db);
 
