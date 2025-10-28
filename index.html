@@ -121,13 +121,16 @@
 <fieldset>
   <legend>펜던트</legend>
 
+  <!-- 버전 선택 -->
   <div class="row" style="margin-bottom:8px;">
     <strong>버전 선택:</strong>
     <label><input type="radio" name="pendant_ver" value="v1" checked>Ver1 (자동 분배)</label>
     <label><input type="radio" name="pendant_ver" value="v2">Ver2 (지정 분배)</label>
+    <label><input type="radio" name="pendant_ver" value="v3">Ver3 (수동 입력)</label>
   </div>
 
-  <div class="row">
+  <!-- 자동 분배용 (Ver1, Ver2 공용) -->
+  <div class="row" id="pendant_auto_row">
     <strong>종류 / 값 입력:</strong>
     <label><input type="radio" name="pendant_mode" value="별" checked>별</label>
     <label><input type="radio" name="pendant_mode" value="달">달</label>
@@ -136,11 +139,20 @@
     <span class="small" id="pendantHint">별 ≤ 6, 달 ≤ 12, 태양 ≤ 18</span>
   </div>
 
-  <div class="row" id="pendant_stats_row" style="margin-top:8px;">
+  <!-- Ver2 전용: 지정 스탯 선택 -->
+  <div class="row" id="pendant_stats_row" style="margin-top:8px; display:none;">
     <strong>Ver2 스탯 선택:</strong>
     <label><input type="checkbox" class="pendStat" value="HP" checked>HP</label>
     <label><input type="checkbox" class="pendStat" value="ATK" checked>ATK</label>
     <label><input type="checkbox" class="pendStat" value="DEF" checked>DEF</label>
+  </div>
+
+  <!-- Ver3 전용: 수동 입력칸 -->
+  <div id="pendant_manual" style="margin-top:8px; display:none;">
+    <strong>수동 입력:</strong>
+    HP <input id="pend_manual_hp" type="number" value="0" style="width:70px;"> %
+    ATK <input id="pend_manual_atk" type="number" value="0" style="width:70px;"> %
+    DEF <input id="pend_manual_df" type="number" value="0" style="width:70px;"> %
   </div>
 </fieldset>
 
@@ -218,6 +230,39 @@ function toggleLevel(level) {
   const allOn = t.every(o => document.getElementById(o.id).checked);
   t.forEach(o => document.getElementById(o.id).checked = !allOn);
 }
+// =========================
+// 펜던트 버전별 UI 전환
+// =========================
+document.querySelectorAll('input[name="pendant_ver"]').forEach(r => {
+  r.addEventListener('change', () => {
+    const v = document.querySelector('input[name="pendant_ver"]:checked').value;
+
+    // Ver3일 때 → 자동입력, Ver2스탯칸 숨기고 수동입력만 표시
+    if (v === "v3") {
+      document.getElementById("pendant_auto_row").style.display = "none";
+      document.getElementById("pendant_stats_row").style.display = "none";
+      document.getElementById("pendant_manual").style.display = "flex";
+    } 
+    // Ver2일 때 → 자동입력 + 스탯선택 표시, 수동입력 숨김
+    else if (v === "v2") {
+      document.getElementById("pendant_auto_row").style.display = "flex";
+      document.getElementById("pendant_stats_row").style.display = "flex";
+      document.getElementById("pendant_manual").style.display = "none";
+    } 
+    // Ver1일 때 → 자동입력만 표시, 나머지 숨김
+    else {
+      document.getElementById("pendant_auto_row").style.display = "flex";
+      document.getElementById("pendant_stats_row").style.display = "none";
+      document.getElementById("pendant_manual").style.display = "none";
+    }
+  });
+});
+
+// 페이지 로드시 기본 상태 세팅
+window.addEventListener("DOMContentLoaded", () => {
+  const def = document.querySelector('input[name="pendant_ver"]:checked');
+  if (def) def.dispatchEvent(new Event('change'));
+});
 
 /* =========================
    계산 로직
@@ -345,14 +390,27 @@ function calc(){
     return;
   }
 
+// Ver3 수동입력은 별/달/태양 제한 검사 생략
+if (pver !== "v3") {
   const lim = {별:6, 달:12, 태양:18}[pm] || 0;
   if (pv > lim || pv <= 0) {
     R.textContent = "펜던트를 다시 확인해주세요.";
     return;
   }
+}
 
-  // ✅ 여기 핵심 변경
-  const pendComb = genPend(
+// ✅ Ver3 수동입력 대응 추가
+let pendComb = [];
+
+if (pver === "v3") {
+  // 수동입력 모드: 펜던트 예측 안 하고 직접 입력값 사용
+  const ph = Number(document.getElementById("pend_manual_hp").value || 0);
+  const pa = Number(document.getElementById("pend_manual_atk").value || 0);
+  const pd = Number(document.getElementById("pend_manual_df").value || 0);
+  pendComb = [[new Stats(ph, pa, pd)]];
+} else {
+  // 기존 Ver1, Ver2 자동조합 로직
+  pendComb = genPend(
     pv,
     pm,
     pver === "v2" ? selectedStats : ["HP", "ATK", "DEF"]
@@ -362,40 +420,69 @@ function calc(){
     R.textContent = "펜던트 조합 오류";
     return;
   }
+}
 
-  const results=[];
-  for(const a of acc){
-    const ah=a.hp/100, aa=a.atk/100, ad=a.df/100;
-    for(const t of selT){
-      const base=dragon[lvl][t];
-      for(let h=0;h<=5;h++){
-        for(let at=0;at<=5-h;at++){
-          const d=5-h-at;
-          const gemTot=new Stats(gem.hp*h, gem.atk*at, gem.df*d);
-          for(const enchDir of ["hp","atk","df"]){
-            const enchPct=new Stats(enchDir==="hp"?ench/100:0, enchDir==="atk"?ench/100:0, enchDir==="df"?ench/100:0);
-            const accPct=new Stats(ah+enchPct.hp, aa+enchPct.atk, ad+enchPct.df);
-            for(const pend of pendComb){
-              const ph=pend.reduce((s,v)=>s+v[0],0);
-              const pa=pend.reduce((s,v)=>s+v[1],0);
-              const pd=pend.reduce((s,v)=>s+v[2],0);
-              const pendStat=new Stats(ph/100, pa/100, pd/100);
-              const [fin,E,B]=calcPredict(base,gemTot,pot,accPct,pendStat,spf,spp,spe,col,bf,db);
-              const slotStr=pend.map(s=>["HP","ATK","DEF"].map((k,i)=>s[i]>0?`${k}${s[i]}`:"").filter(Boolean).join(" ")).join(" / ");
-              const enchLabel={hp:"HP",atk:"ATK",df:"DEF"}[enchDir];
-              const l1=`${t} | ${a.name} Lv${a.level} | 젬: HP${h} ATK${at} DEF${d} | 펜던트: ${pm} (${slotStr}) | 인첸트: ${enchLabel} +${ench}%\n`;
-              const l2=`HP=${fin.hp} | ATK=${fin.atk} | DEF=${fin.df} | E=${E.toFixed(0)} | B=${(B/1e6).toFixed(3)}\n`;
-              results.push({B,display_line1:l1,display_line2:l2});
+    const results=[];
+  for (const a of acc) {
+    const ah = a.hp / 100, aa = a.atk / 100, ad = a.df / 100;
+    for (const t of selT) {
+      const base = dragon[lvl][t];
+      for (let h = 0; h <= 5; h++) {
+        for (let at = 0; at <= 5 - h; at++) {
+          const d = 5 - h - at;
+          const gemTot = new Stats(gem.hp * h, gem.atk * at, gem.df * d);
+
+          for (const enchDir of ["hp", "atk", "df"]) {
+            const enchPct = new Stats(
+              enchDir === "hp" ? ench / 100 : 0,
+              enchDir === "atk" ? ench / 100 : 0,
+              enchDir === "df" ? ench / 100 : 0
+            );
+            const accPct = new Stats(ah + enchPct.hp, aa + enchPct.atk, ad + enchPct.df);
+
+            for (const pend of pendComb) {
+              const ph = pend.reduce((s, v) => s + v[0], 0);
+              const pa = pend.reduce((s, v) => s + v[1], 0);
+              const pd = pend.reduce((s, v) => s + v[2], 0);
+              const pendStat = new Stats(ph / 100, pa / 100, pd / 100);
+
+              const [fin, E, B] = calcPredict(base, gemTot, pot, accPct, pendStat, spf, spp, spe, col, bf, db);
+
+              // ✅ Ver3 수동입력 대응
+              const slotStr = (pver === "v3")
+                ? `HP${pend[0].hp}% ATK${pend[0].atk}% DEF${pend[0].df}%`
+                : pend.map(s =>
+                    ["HP", "ATK", "DEF"]
+                      .map((k, i) => s[i] > 0 ? `${k}${s[i]}` : "")
+                      .filter(Boolean)
+                      .join(" ")
+                  ).join(" / ");
+
+              const pendLabel = (pver === "v3") ? "수동입력" : pm;
+              const enchLabel = { hp: "HP", atk: "ATK", df: "DEF" }[enchDir];
+
+              const l1 = `${t} | ${a.name} Lv${a.level} | 젬: HP${h} ATK${at} DEF${d} | 펜던트: ${pendLabel} (${slotStr}) | 인첸트: ${enchLabel} +${ench}%\n`;
+              const l2 = `HP=${fin.hp} | ATK=${fin.atk} | DEF=${fin.df} | E=${E.toFixed(0)} | B=${(B / 1e6).toFixed(3)}\n`;
+
+              results.push({ B, display_line1: l1, display_line2: l2 });
             }
           }
         }
       }
     }
   }
-  if(!results.length){ R.textContent="결과가 생성되지 않았습니다."; return; }
-  results.sort((a,b)=>b.B-a.B);
-  const out=results.slice(0,topn).map((r,i)=>`[${i+1}위] ${r.display_line1}${r.display_line2}`).join("\n");
-  R.textContent=out;
+
+  if (!results.length) {
+    R.textContent = "결과가 생성되지 않았습니다.";
+    return;
+  }
+
+  results.sort((a, b) => b.B - a.B);
+  const out = results
+    .slice(0, topn)
+    .map((r, i) => `[${i + 1}위] ${r.display_line1}${r.display_line2}`)
+    .join("\n");
+  R.textContent = out;
 }
 
 /* =========================
