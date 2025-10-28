@@ -148,11 +148,11 @@
   </div>
 
   <!-- Ver3 전용: 수동 입력칸 -->
-  <div id="pendant_manual" style="margin-top:8px; display:none;">
-    <strong>수동 입력:</strong>
-    HP <input id="pend_manual_hp" type="number" value="0" style="width:70px;"> %
-    ATK <input id="pend_manual_atk" type="number" value="0" style="width:70px;"> %
-    DEF <input id="pend_manual_df" type="number" value="0" style="width:70px;"> %
+  <div id="pendant_manual" style="margin-top:8px; display:none; align-items:center; gap:4px;">
+  <strong>수동 입력:</strong>
+  HP <input id="pend_manual_hp" type="number" value="0" style="width:55px; height:24px; font-size:13px; text-align:center;">%
+  ATK <input id="pend_manual_atk" type="number" value="0" style="width:55px; height:24px; font-size:13px; text-align:center;">%
+  DEF <input id="pend_manual_df" type="number" value="0" style="width:55px; height:24px; font-size:13px; text-align:center;">%
   </div>
 </fieldset>
 
@@ -404,9 +404,9 @@ let pendComb = [];
 
 if (pver === "v3") {
   // 수동입력 모드: 펜던트 예측 안 하고 직접 입력값 사용
-  const ph = Number(document.getElementById("pend_manual_hp").value || 0);
-  const pa = Number(document.getElementById("pend_manual_atk").value || 0);
-  const pd = Number(document.getElementById("pend_manual_df").value || 0);
+const ph = Number(document.getElementById("pend_manual_hp")?.value || 0);
+const pa = Number(document.getElementById("pend_manual_atk")?.value || 0);
+const pd = Number(document.getElementById("pend_manual_df")?.value || 0);
   pendComb = [[new Stats(ph, pa, pd)]];
 } else {
   // 기존 Ver1, Ver2 자동조합 로직
