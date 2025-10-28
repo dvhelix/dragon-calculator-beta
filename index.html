@@ -404,9 +404,9 @@ let pendComb = [];
 
 if (pver === "v3") {
   // 수동입력 모드: 펜던트 예측 안 하고 직접 입력값 사용
-const ph = Number(document.getElementById("pend_manual_hp")?.value || 0);
-const pa = Number(document.getElementById("pend_manual_atk")?.value || 0);
-const pd = Number(document.getElementById("pend_manual_df")?.value || 0);
+  const ph = Number(document.getElementById("pend_manual_hp")?.value || 0) / 100;
+  const pa = Number(document.getElementById("pend_manual_atk")?.value || 0) / 100;
+  const pd = Number(document.getElementById("pend_manual_df")?.value || 0) / 100;
   pendComb = [[new Stats(ph, pa, pd)]];
 } else {
   // 기존 Ver1, Ver2 자동조합 로직
