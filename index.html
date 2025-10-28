@@ -451,16 +451,16 @@ if (pver === "v3") {
                 : new Stats(ph / 100, pa / 100, pd / 100);  // Ver1,2는 그대로
 
               const [fin, E, B] = calcPredict(base, gemTot, pot, accPct, pendStat, spf, spp, spe, col, bf, db);
-
-              // ✅ Ver3 수동입력 대응
-             const slotStr = (pver === "v3")
-               ? `HP${(pend[0][0] * 100).toFixed(0)}% ATK${(pend[0][1] * 100).toFixed(0)}% DEF${(pend[0][2] * 100).toFixed(0)}%`
-               : pend.map(s =>
-                 ["HP", "ATK", "DEF"]
-                 .map((k, i) => s[i] > 0 ? `${k}${s[i]}` : "")
-                 .filter(Boolean)
-                 .join(" ")
-                         ).join(" / ");
+              
+              // ✅ Ver3 수동입력 대응 (undefined 방지)
+              const slotStr = (pver === "v3")
+                ? `HP${(pendStat.hp * 100).toFixed(0)}% ATK${(pendStat.atk * 100).toFixed(0)}% DEF${(pendStat.df * 100).toFixed(0)}%`
+                : pend.map(s =>
+                  ["HP", "ATK", "DEF"]
+                  .map((k, i) => s[i] > 0 ? `${k}${s[i]}` : "")
+                  .filter(Boolean)
+                  .join(" ")
+                          ).join(" / ");
 
               const pendLabel = (pver === "v3") ? "수동입력" : pm;
               const enchLabel = { hp: "HP", atk: "ATK", df: "DEF" }[enchDir];
