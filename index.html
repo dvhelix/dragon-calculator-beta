@@ -19,6 +19,41 @@
   .toolbar { display:flex; gap:8px; margin:8px 0; flex-wrap:wrap; }
   #result { white-space:pre; background:#111; color:#e5e5e5; padding:12px; border-radius:6px; min-height:220px; }
   .small { color:#888; font-size:12px; }
+
+  /* =========================
+     정령 / 버프 / 디버프 전용 정렬
+     ========================= */
+  .row-spirit { 
+    display: grid; 
+    grid-template-columns: 150px 90px 90px 90px auto; 
+    align-items: center; 
+    column-gap: 8px;
+    margin-bottom: 6px; 
+  }
+
+  .row-spirit strong { 
+    text-align: right; 
+    padding-right: 4px; 
+    font-size: 14px; 
+    font-weight: bold;
+  }
+
+  .row-spirit input[type="number"] { 
+    width: 84px; 
+    height: 28px; 
+    text-align: center; 
+    border: 1px solid #aaa; 
+    border-radius: 4px; 
+    font-size: 13px; 
+    background: #fff; 
+  }
+
+  .row-spirit .small {
+    text-align: left;
+    color: #888;
+    font-size: 12px;
+    margin-left: 4px;
+  }
 </style>
 </head>
 <body>
@@ -108,46 +143,16 @@
   </div>
 </fieldset>
 
- <!-- 정령 / 버프 / 디버프 -->
+<!-- 정령 / 버프 / 디버프 -->
 <fieldset>
   <legend>정령 / 버프 / 디버프</legend>
   <div style="font-weight:bold; color:black; margin-bottom:6px;">(HP / ATK / DEF)</div>
 
-  <div class="row-spirit">
-    <strong>정령 + (플옵)</strong>
-    <input id="sf_hp" type="number" value="0">
-    <input id="sf_atk" type="number" value="0">
-    <input id="sf_df" type="number" value="0">
-  </div>
-
-  <div class="row-spirit">
-    <strong>정령 % (퍼옵)</strong>
-    <input id="sp_hp" type="number" value="0">
-    <input id="sp_atk" type="number" value="0">
-    <input id="sp_df" type="number" value="0">
-    <span class="small">(% 입력)</span>
-  </div>
-
-  <div class="row-spirit">
-    <strong>정령 부가옵</strong>
-    <input id="se_hp" type="number" value="0">
-    <input id="se_atk" type="number" value="0">
-    <input id="se_df" type="number" value="0">
-  </div>
-
-  <div class="row-spirit">
-    <strong>버프 (%)</strong>
-    <input id="bf_hp" type="number" value="0">
-    <input id="bf_atk" type="number" value="0">
-    <input id="bf_df" type="number" value="0">
-  </div>
-
-  <div class="row-spirit">
-    <strong>디버프 (%)</strong>
-    <input id="db_hp" type="number" value="0">
-    <input id="db_atk" type="number" value="0">
-    <input id="db_df" type="number" value="0">
-  </div>
+  <div class="row-spirit"><strong>정령 + (플옵)</strong><input id="sf_hp" type="number" value="0"><input id="sf_atk" type="number" value="0"><input id="sf_df" type="number" value="0"></div>
+  <div class="row-spirit"><strong>정령 % (퍼옵)</strong><input id="sp_hp" type="number" value="0"><input id="sp_atk" type="number" value="0"><input id="sp_df" type="number" value="0"><span class="small">(% 입력)</span></div>
+  <div class="row-spirit"><strong>정령 부가옵</strong><input id="se_hp" type="number" value="0"><input id="se_atk" type="number" value="0"><input id="se_df" type="number" value="0"></div>
+  <div class="row-spirit"><strong>버프 (%)</strong><input id="bf_hp" type="number" value="0"><input id="bf_atk" type="number" value="0"><input id="bf_df" type="number" value="0"></div>
+  <div class="row-spirit"><strong>디버프 (%)</strong><input id="db_hp" type="number" value="0"><input id="db_atk" type="number" value="0"><input id="db_df" type="number" value="0"></div>
 </fieldset>
 
   <!-- 기타 -->
