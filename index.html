@@ -401,15 +401,18 @@ if (pver !== "v3") {
 
 // ✅ Ver3 수동입력 대응 추가
 let pendComb = [];
+let slotStrV3 = ""; // 
 
 if (pver === "v3") {
-  // 수동입력 모드: pendComb 구조를 자동 버전과 맞춰줌
   const ph = Number(document.getElementById("pend_manual_hp")?.value || 0) / 100;
   const pa = Number(document.getElementById("pend_manual_atk")?.value || 0) / 100;
   const pd = Number(document.getElementById("pend_manual_df")?.value || 0) / 100;
 
-  // 자동 조합 버전처럼 2D 배열 형태로 만듦
   pendComb = [[[ph, pa, pd]]];
+
+  // ✅ 표시용 문자열을 여기서 한 번만 안전하게 생성
+  const fmt = v => Number.isFinite(v) ? (v * 100).toFixed(0) + "%" : "0%";
+  slotStrV3 = `HP${fmt(ph)} ATK${fmt(pa)} DEF${fmt(pd)}`;
 } else {
   // 기존 Ver1, Ver2 자동조합 로직
   pendComb = genPend(
@@ -452,11 +455,11 @@ if (pver === "v3") {
 
               const [fin, E, B] = calcPredict(base, gemTot, pot, accPct, pendStat, spf, spp, spe, col, bf, db);
               
-              // ✅ Ver3 수동입력 대응 (undefined 방지)
+              // ✅ 표시 문자열
               const slotStr = (pver === "v3")
-                ? `HP${(pendStat.hp * 100).toFixed(0)}% ATK${(pendStat.atk * 100).toFixed(0)}% DEF${(pendStat.df * 100).toFixed(0)}%`
+                ? slotStrV3                             // ← 더 이상 pend나 pendStat로 만들지 않음
                 : pend.map(s =>
-                  ["HP", "ATK", "DEF"]
+                  ["HP","ATK","DEF"]
                   .map((k, i) => s[i] > 0 ? `${k}${s[i]}` : "")
                   .filter(Boolean)
                   .join(" ")
