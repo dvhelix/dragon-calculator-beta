@@ -81,17 +81,30 @@
     <div id="accList" class="acc-list"></div>
   </fieldset>
 
-  <!-- 펜던트 -->
-  <fieldset>
-    <legend>펜던트</legend>
-    <div class="row">
-      <label><input type="radio" name="pendant_mode" value="별" checked>별</label>
-      <label><input type="radio" name="pendant_mode" value="달">달</label>
-      <label><input type="radio" name="pendant_mode" value="태양">태양</label>
-      <input id="pendant_value" type="number" value="12"> %
-      <span class="small" id="pendantHint">별 ≤ 6, 달 ≤ 12, 태양 ≤ 18</span>
-    </div>
-  </fieldset>
+<!-- 펜던트 -->
+<fieldset>
+  <legend>펜던트</legend>
+  <div class="row">
+    <label><input type="radio" name="pendant_mode" value="별" checked>별</label>
+    <label><input type="radio" name="pendant_mode" value="달">달</label>
+    <label><input type="radio" name="pendant_mode" value="태양">태양</label>
+    <input id="pendant_value" type="number" value="12"> %
+    <span class="small" id="pendantHint">별 ≤ 6, 달 ≤ 12, 태양 ≤ 18</span>
+  </div>
+
+  <div class="row" style="margin-top:8px;">
+    <strong>버전 선택:</strong>
+    <label><input type="radio" name="pendant_ver" value="v1" checked>Ver1 (자동 분배)</label>
+    <label><input type="radio" name="pendant_ver" value="v2">Ver2 (지정 분배)</label>
+  </div>
+
+  <div class="row" id="pendant_stats_row" style="margin-top:8px;">
+    <strong>Ver2 스탯 선택:</strong>
+    <label><input type="checkbox" class="pendStat" value="HP" checked>HP</label>
+    <label><input type="checkbox" class="pendStat" value="ATK" checked>ATK</label>
+    <label><input type="checkbox" class="pendStat" value="DEF" checked>DEF</label>
+  </div>
+</fieldset>
 
   <!-- 정령 / 버프 / 디버프 -->
   <fieldset>
@@ -116,6 +129,7 @@
   <div id="result"></div>
 
 <script>
+  document.addEventListener("submit", e => e.preventDefault());
 /* =========================
    장신구 테이블
    ========================= */
@@ -196,21 +210,56 @@ const dragon={
  "9.0":{공격형:new Stats(876,325,161),방어형:new Stats(788,185,323),체력형:new Stats(1412,176,176),공방형:new Stats(720,262,263),체공형:new Stats(1160,282,133),체방형:new Stats(1160,133,282)}
 };
 
-function genPend(total,mode){
-  const c=[]; const M=6; if(total<=0) return [[[0,0,0]]];
-  if(mode==="별"){const v=Math.min(total,M);return [[[v,0,0]],[[0,v,0]],[[0,0,v]]];}
-  if(mode==="달"){
-    for(let x=1;x<=M;x++) for(let y=1;y<=M;y++)
-      if(x+y===total) for(let s1=0;s1<3;s1++) for(let s2=0;s2<3;s2++){
-        const a=[0,0,0]; a[s1]=x; const b=[0,0,0]; b[s2]=y; c.push([a,b]);
-      }
+function genPend(total, mode, selectedStats = ["HP","ATK","DEF"]) {
+  const c = [];
+  const M = 6;
+  if (total <= 0) return [[[0,0,0]]];
+
+  const useHP = selectedStats.includes("HP");
+  const useATK = selectedStats.includes("ATK");
+  const useDEF = selectedStats.includes("DEF");
+
+  // 선택된 스탯 인덱스만 사용
+  const statIdx = [];
+  if (useHP) statIdx.push(0);
+  if (useATK) statIdx.push(1);
+  if (useDEF) statIdx.push(2);
+
+  if (mode === "별") {
+    const v = Math.min(total, M);
+    const combos = statIdx.map(i => {
+      const a = [0,0,0];
+      a[i] = v;
+      return [a];
+    });
+    return combos;
+  }
+
+  if (mode === "달") {
+    for (let x=1;x<=M;x++)
+      for (let y=1;y<=M;y++)
+        if (x+y===total)
+          for (let i of statIdx)
+            for (let j of statIdx) {
+              const a=[0,0,0]; const b=[0,0,0];
+              a[i]=x; b[j]=y;
+              c.push([a,b]);
+            }
     return c;
   }
-  if(mode==="태양"){
-    for(let x=1;x<=M;x++) for(let y=1;y<=M;y++) for(let z=1;z<=M;z++)
-      if(x+y+z===total) for(let s1=0;s1<3;s1++) for(let s2=0;s2<3;s2++) for(let s3=0;s3<3;s3++){
-        const a=[0,0,0]; a[s1]=x; const b=[0,0,0]; b[s2]=y; const d=[0,0,0]; d[s3]=z; c.push([a,b,d]);
-      }
+
+  if (mode === "태양") {
+    for (let x=1;x<=M;x++)
+      for (let y=1;y<=M;y++)
+        for (let z=1;z<=M;z++)
+          if (x+y+z===total)
+            for (let i of statIdx)
+              for (let j of statIdx)
+                for (let k of statIdx) {
+                  const a=[0,0,0], b=[0,0,0], d=[0,0,0];
+                  a[i]=x; b[j]=y; d[k]=z;
+                  c.push([a,b,d]);
+                }
     return c;
   }
   return [[[0,0,0]]];
@@ -232,25 +281,48 @@ function calc(){
   const acc=[]; accCheckboxes.forEach(o=>{ if(document.getElementById(o.id).checked) acc.push(o); });
   if(!acc.length){ R.textContent="장신구가 선택되지 않았습니다."; return; }
 
-  const pm=document.querySelector('input[name="pendant_mode"]:checked').value;
-  const pv=Number(document.getElementById("pendant_value").value||0);
-  const topn=Number(document.getElementById("top_n").value||5);
-  const ench=21, pot=new Stats(24,6,6), col=new Stats(240,60,60);
+  const pm = document.querySelector('input[name="pendant_mode"]:checked').value;
+  const pv = Number(document.getElementById("pendant_value").value || 0);
+  const pver = document.querySelector('input[name="pendant_ver"]:checked')?.value || "v1";
+  const selectedStats = Array.from(document.querySelectorAll('.pendStat'))
+    .filter(cb => cb.checked)
+    .map(cb => cb.value);
+
+  const topn = Number(document.getElementById("top_n").value || 5);
+  const ench = 21,
+        pot = new Stats(24,6,6),
+        col = new Stats(240,60,60);
 
   // 입력 요소를 명시적으로 읽기 (암묵 전역 의존 제거)
-  const spf=new Stats(val('sf_hp'), val('sf_atk'), val('sf_df'));
-  const spp=new Stats(val('sp_hp')/100, val('sp_atk')/100, val('sp_df')/100);
-  const spe=new Stats(val('se_hp'), val('se_atk'), val('se_df'));
-  const bf =new Stats(val('bf_hp')/100, val('bf_atk')/100, val('bf_df')/100);
-  const db =new Stats(val('db_hp')/100, val('db_atk')/100, val('db_df')/100);
+  const spf = new Stats(val('sf_hp'), val('sf_atk'), val('sf_df'));
+  const spp = new Stats(val('sp_hp')/100, val('sp_atk')/100, val('sp_df')/100);
+  const spe = new Stats(val('se_hp'), val('se_atk'), val('se_df'));
+  const bf  = new Stats(val('bf_hp')/100, val('bf_atk')/100, val('bf_df')/100);
+  const db  = new Stats(val('db_hp')/100, val('db_atk')/100, val('db_df')/100);
 
-  const selT=Object.keys(T).filter(k=>T[k]);
-  if(!selT.length){ R.textContent="드래곤 타입이 선택되지 않았습니다."; return; }
+  const selT = Object.keys(T).filter(k => T[k]);
+  if (!selT.length) {
+    R.textContent = "드래곤 타입이 선택되지 않았습니다.";
+    return;
+  }
 
-  const lim={별:6,달:12,태양:18}[pm]||0;
-  if(pv>lim || pv<=0){ R.textContent="펜던트를 다시 확인해주세요."; return; }
-  const pendComb=genPend(pv,pm);
-  if(!pendComb.length){ R.textContent="펜던트 조합 오류"; return; }
+  const lim = {별:6, 달:12, 태양:18}[pm] || 0;
+  if (pv > lim || pv <= 0) {
+    R.textContent = "펜던트를 다시 확인해주세요.";
+    return;
+  }
+
+  // ✅ 여기 핵심 변경
+  const pendComb = genPend(
+    pv,
+    pm,
+    pver === "v2" ? selectedStats : ["HP", "ATK", "DEF"]
+  );
+
+  if (!pendComb.length) {
+    R.textContent = "펜던트 조합 오류";
+    return;
+  }
 
   const results=[];
   for(const a of acc){
