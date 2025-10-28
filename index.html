@@ -4,21 +4,80 @@
 <meta charset="UTF-8">
 <title>드래곤 비벨/이벨 계산기</title>
 <style>
-  body { font-family: Consolas, "Noto Sans KR", sans-serif; margin: 24px; background:#f7f7f9; }
+  body { 
+    font-family: Consolas, "Noto Sans KR", sans-serif; 
+    margin: 24px; 
+    background:#f7f7f9; 
+  }
   h2 { margin-bottom: 8px; }
   .hint { color:#666; margin-bottom: 14px; }
-  fieldset { background:#fff; border:1px solid #ccc; padding:12px; margin-bottom:14px; }
+  fieldset { 
+    background:#fff; 
+    border:1px solid #ccc; 
+    padding:12px; 
+    margin-bottom:14px; 
+  }
   legend { font-weight:bold; }
-  .row { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
-  .row label { margin-right:8px; }
-  input[type="number"] { width:84px; text-align:center; }
-  .acc-list { max-height:180px; overflow:auto; border:1px solid #ddd; padding:8px; background:#fcfcfc; }
-  .btn { padding:8px 14px; cursor:pointer; border:1px solid #999; background:#fff; }
+
+  .row { 
+    display: grid; 
+    grid-template-columns: 140px 90px 90px 90px auto; 
+    align-items: center; 
+    gap: 6px; 
+    margin-bottom: 6px; 
+  }
+  .row strong { 
+    text-align: right; 
+    padding-right: 4px; 
+    font-size: 14px; 
+  }
+  input[type="number"] { 
+    width: 80px; 
+    height: 28px; 
+    text-align: center; 
+    border: 1px solid #aaa; 
+    border-radius: 4px; 
+    font-size: 13px; 
+    background: #fff; 
+  }
+
+  .acc-list { 
+    max-height:180px; 
+    overflow:auto; 
+    border:1px solid #ddd; 
+    padding:8px; 
+    background:#fcfcfc; 
+  }
+  .btn { 
+    padding:8px 14px; 
+    cursor:pointer; 
+    border:1px solid #999; 
+    background:#fff; 
+  }
   .btn:hover { background:#f0f0f0; }
-  .btn.primary { border-color:#2d6cdf; background:#2d6cdf; color:#fff; }
-  .toolbar { display:flex; gap:8px; margin:8px 0; flex-wrap:wrap; }
-  #result { white-space:pre; background:#111; color:#e5e5e5; padding:12px; border-radius:6px; min-height:220px; }
-  .small { color:#888; font-size:12px; }
+  .btn.primary { 
+    border-color:#2d6cdf; 
+    background:#2d6cdf; 
+    color:#fff; 
+  }
+  .toolbar { 
+    display:flex; 
+    gap:8px; 
+    margin:8px 0; 
+    flex-wrap:wrap; 
+  }
+  #result { 
+    white-space:pre; 
+    background:#111; 
+    color:#e5e5e5; 
+    padding:12px; 
+    border-radius:6px; 
+    min-height:220px; 
+  }
+  .small { 
+    color:#888; 
+    font-size:12px; 
+  }
 </style>
 </head>
 <body>
