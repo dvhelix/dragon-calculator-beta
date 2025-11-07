@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="robots" content="noindex, nofollow" />
-<title>드래곤 비벨/이벨 수동 계산기 (엑셀 스타일)</title>
+<title>드래곤 비벨/이벨 수동 계산기</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <style>
   :root{
@@ -126,7 +126,7 @@
     </div>
   </fieldset>
 
-  <!-- 정령/버프/디버프 (자동계산기와 동일 UI) -->
+  <!-- 정령/버프/디버프 -->
   <fieldset>
     <legend>정령 / 버프 / 디버프</legend>
     <div style="font-weight:700;margin-bottom:6px">(HP / ATK / DEF)</div>
@@ -318,38 +318,54 @@ function manualCalc(){
   const [fin, E, B] = calcPredict(base, gem, pot, acc, pend, spf, spp, spe, col, bf, db);
 
   // 7) 결과 시트 업데이트
-  setText('c_base_hp', base.hp); setText('c_base_atk', base.atk); setText('c_base_df', base.df);
+setText('c_base_hp', base.hp); 
+setText('c_base_atk', base.atk); 
+setText('c_base_df', base.df);
 
-  setText('c_acc_hp', (acc.hp*100).toFixed(0)+'%');
-  setText('c_acc_atk', (acc.atk*100).toFixed(0)+'%');
-  setText('c_acc_df', (acc.df*100).toFixed(0)+'%');
+// --- 장신구/인첸트 표시 분리 ---
+const accOnly = new Stats(
+  num('m_acc_hp')/100,
+  num('m_acc_atk')/100,
+  num('m_acc_df')/100
+);
+const enchOnly = new Stats(
+  num('m_ench_hp')/100,
+  num('m_ench_atk')/100,
+  num('m_ench_df')/100
+);
 
-  setText('c_ench_hp', document.getElementById('m_ench_hp').value + '%');
-  setText('c_ench_atk', document.getElementById('m_ench_atk').value + '%');
-  setText('c_ench_df', document.getElementById('m_ench_df').value + '%');
+setText('c_acc_hp', (accOnly.hp*100).toFixed(0)+'%');
+setText('c_acc_atk', (accOnly.atk*100).toFixed(0)+'%');
+setText('c_acc_df', (accOnly.df*100).toFixed(0)+'%');
 
-  setText('c_pend_hp', document.getElementById('m_pend_hp').value + '%');
-  setText('c_pend_atk', document.getElementById('m_pend_atk').value + '%');
-  setText('c_pend_df', document.getElementById('m_pend_df').value + '%');
+setText('c_ench_hp', (enchOnly.hp*100).toFixed(0)+'%');
+setText('c_ench_atk', (enchOnly.atk*100).toFixed(0)+'%');
+setText('c_ench_df', (enchOnly.df*100).toFixed(0)+'%');
 
-  setText('c_spf_hp', spf.hp); setText('c_spf_atk', spf.atk); setText('c_spf_df', spf.df);
-  setText('c_spp_hp', (spp.hp*100).toFixed(0)+'%');
-  setText('c_spp_atk', (spp.atk*100).toFixed(0)+'%');
-  setText('c_spp_df', (spp.df*100).toFixed(0)+'%');
-  setText('c_spe_hp', spe.hp); setText('c_spe_atk', spe.atk); setText('c_spe_df', spe.df);
+// --- 펜던트 ---
+setText('c_pend_hp', document.getElementById('m_pend_hp').value + '%');
+setText('c_pend_atk', document.getElementById('m_pend_atk').value + '%');
+setText('c_pend_df', document.getElementById('m_pend_df').value + '%');
 
-  setText('c_bf_hp', (bf.hp*100).toFixed(0)+'%');
-  setText('c_bf_atk', (bf.atk*100).toFixed(0)+'%');
-  setText('c_bf_df', (bf.df*100).toFixed(0)+'%');
-  setText('c_db_hp', (db.hp*100).toFixed(0)+'%');
-  setText('c_db_atk', (db.atk*100).toFixed(0)+'%');
-  setText('c_db_df', (db.df*100).toFixed(0)+'%');
+// --- 정령/버프/디버프 ---
+setText('c_spf_hp', spf.hp); setText('c_spf_atk', spf.atk); setText('c_spf_df', spf.df);
+setText('c_spp_hp', (spp.hp*100).toFixed(0)+'%');
+setText('c_spp_atk', (spp.atk*100).toFixed(0)+'%');
+setText('c_spp_df', (spp.df*100).toFixed(0)+'%');
+setText('c_spe_hp', spe.hp); setText('c_spe_atk', spe.atk); setText('c_spe_df', spe.df);
+setText('c_bf_hp', (bf.hp*100).toFixed(0)+'%');
+setText('c_bf_atk', (bf.atk*100).toFixed(0)+'%');
+setText('c_bf_df', (bf.df*100).toFixed(0)+'%');
+setText('c_db_hp', (db.hp*100).toFixed(0)+'%');
+setText('c_db_atk', (db.atk*100).toFixed(0)+'%');
+setText('c_db_df', (db.df*100).toFixed(0)+'%');
 
-  setText('c_fin_hp', fin.hp);
-  setText('c_fin_atk', fin.atk);
-  setText('c_fin_df', fin.df);
-  setText('c_eval', Math.round(E).toString());
-  setText('c_bval', (B/1e6).toFixed(3) + ' M'); // 보기 좋게 백만 단위
+// --- 최종 결과 ---
+setText('c_fin_hp', fin.hp);
+setText('c_fin_atk', fin.atk);
+setText('c_fin_df', fin.df);
+setText('c_eval', Math.round(E).toString());
+setText('c_bval', (B/1e6).toFixed(3));
 }
 
 function num(id){ return Number(document.getElementById(id)?.value||0); }
