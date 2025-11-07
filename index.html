@@ -45,7 +45,7 @@
   /* ===== 결과 시트 영역 ===== */
   .results-wrap{margin-top:14px}
   .results-row{
-    display:flex; gap:12px; align-items:flex-start; flex-wrap:nowrap; overflow:auto;
+    display:inline-flex; gap:12px; align-items:flex-start; flex-wrap:nowrap;
   } /* 결과는 가로로 나란히 */
   .sheet{
     background:#111; color:#e5e5e5;
@@ -329,7 +329,6 @@ function renderOneResult(idx){
       <div class="cell">E-Value</div><div class="cell big" id="d${idx}_c_eval" style="grid-column:2/5">-</div>
       <div class="cell">B-Value</div><div class="cell big" id="d${idx}_c_bval" style="grid-column:2/5">-</div>
     </div>
-    <div class="footer">Copyright © 2025 Helix</div>
   `;
   allResults.appendChild(sheet);
 }
@@ -428,12 +427,22 @@ function manualCalcAll(){
 function num(id){ return Number(document.getElementById(id)?.value||0); }
 function setText(id, v){ const el=document.getElementById(id); if(el) el.textContent=v; }
 
-/* ========= PNG 저장 (가로 비교 전체) ========= */
 function savePngAll(){
   const node = document.getElementById('allResults');
-  // 캡처 전에 현재 표시 상태가 최신인지 보장하려면 계산 실행
-  manualCalcAll();
-  html2canvas(node,{backgroundColor:null, scale:2}).then(canvas=>{
+  manualCalcAll(); // 최신 값 보장
+
+  // ▼ 추가: 실제 콘텐츠 크기 사용
+  const w = node.scrollWidth;
+  const h = node.scrollHeight;
+
+  html2canvas(node, {
+    backgroundColor: null,
+    scale: 2,
+    width:  w,              // ← 추가
+    height: h,              // ← 추가
+    windowWidth:  w,        // ← 추가
+    windowHeight: h         // ← 추가
+  }).then(canvas=>{
     const link=document.createElement('a');
     link.download='dragon_calculate.png';
     link.href=canvas.toDataURL('image/png');
