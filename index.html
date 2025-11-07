@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="robots" content="noindex, nofollow" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>🐉 드래곤 비벨/이벨 통합 계산기</title>
+<title>드래곤 비벨/이벨 통합 계산기</title>
 <style>
   :root{
     --bg:#f7f7f9; --ink:#111; --muted:#666;
@@ -82,7 +82,7 @@
 </head>
 
 <body>
-  <h2>🐉 드래곤 비벨/이벨 통합 계산기</h2>
+  <h2>드래곤 비벨/이벨 통합 계산기</h2>
   <div class="modebar">
     <button class="btn primary" id="btnAuto">자동 계산기</button>
     <button class="btn" id="btnManual">수동 계산기</button>
@@ -662,51 +662,51 @@
     }
   }
 
-  function renderOneResult(idx){
-    const sheet = document.createElement('div');
-    sheet.className = 'sheet';
-    sheet.id = `resultSheet_${idx}`;
-    sheet.innerHTML = `
-      <div class="name" id="d${idx}_name_display">드래곤 ${idx}</div>
-      <div class="grid">
-        <div class="cell h center">구분</div>
-        <div class="cell h center">체력</div>
-        <div class="cell h center">공격력</div>
-        <div class="cell h center">방어력</div>
+function renderOneResult(idx){
+  const sheet = document.createElement('div');
+  sheet.className = 'sheet';
+  sheet.id = `resultSheet_${idx}`;
+  sheet.innerHTML = `
+    <div class="name" id="d${idx}_name_display">드래곤 ${idx}</div>
+    <div class="grid">
+      <div class="cell h center">구분</div>
+      <div class="cell h center">체력</div>
+      <div class="cell h center">공격력</div>
+      <div class="cell h center">방어력</div>
 
-        <div class="cell section" style="grid-column:1/5">기본</div>
-        <div class="cell">기본 스탯</div><div class="cell right" id="d${idx}_c_base_hp">-</div><div class="cell right" id="d${idx}_c_base_atk">-</div><div class="cell right" id="d${idx}_c_base_df">-</div>
+      <div class="cell section">기본 스탯</div>
+      <div class="cell right" id="d${idx}_c_base_hp">-</div>
+      <div class="cell right" id="d${idx}_c_base_atk">-</div>
+      <div class="cell right" id="d${idx}_c_base_df">-</div>
 
-        <div class="cell section" style="grid-column:1/5">젬</div>
-        <div class="cell">젬1</div><div class="cell right" id="d${idx}_c_g1_hp">0</div><div class="cell right" id="d${idx}_c_g1_atk">0</div><div class="cell right" id="d${idx}_c_g1_df">0</div>
-        <div class="cell">젬2</div><div class="cell right" id="d${idx}_c_g2_hp">0</div><div class="cell right" id="d${idx}_c_g2_atk">0</div><div class="cell right" id="d${idx}_c_g2_df">0</div>
-        <div class="cell">젬3</div><div class="cell right" id="d${idx}_c_g3_hp">0</div><div class="cell right" id="d${idx}_c_g3_atk">0</div><div class="cell right" id="d${idx}_c_g3_df">0</div>
-        <div class="cell">젬4</div><div class="cell right" id="d${idx}_c_g4_hp">0</div><div class="cell right" id="d${idx}_c_g4_atk">0</div><div class="cell right" id="d${idx}_c_g4_df">0</div>
-        <div class="cell">젬5</div><div class="cell right" id="d${idx}_c_g5_hp">0</div><div class="cell right" id="d${idx}_c_g5_atk">0</div><div class="cell right" id="d${idx}_c_g5_df">0</div>
+      <div class="cell">젬1</div><div class="cell right" id="d${idx}_c_g1_hp">0</div><div class="cell right" id="d${idx}_c_g1_atk">0</div><div class="cell right" id="d${idx}_c_g1_df">0</div>
+      <div class="cell">젬2</div><div class="cell right" id="d${idx}_c_g2_hp">0</div><div class="cell right" id="d${idx}_c_g2_atk">0</div><div class="cell right" id="d${idx}_c_g2_df">0</div>
+      <div class="cell">젬3</div><div class="cell right" id="d${idx}_c_g3_hp">0</div><div class="cell right" id="d${idx}_c_g3_atk">0</div><div class="cell right" id="d${idx}_c_g3_df">0</div>
+      <div class="cell">젬4</div><div class="cell right" id="d${idx}_c_g4_hp">0</div><div class="cell right" id="d${idx}_c_g4_atk">0</div><div class="cell right" id="d${idx}_c_g4_df">0</div>
+      <div class="cell">젬5</div><div class="cell right" id="d${idx}_c_g5_hp">0</div><div class="cell right" id="d${idx}_c_g5_atk">0</div><div class="cell right" id="d${idx}_c_g5_df">0</div>
 
-        <div class="cell section" style="grid-column:1/5">퍼센트 옵션</div>
-        <div class="cell">장신구 %</div><div class="cell right" id="d${idx}_c_acc_hp">0%</div><div class="cell right" id="d${idx}_c_acc_atk">0%</div><div class="cell right" id="d${idx}_c_acc_df">0%</div>
-        <div class="cell">인첸트 %</div><div class="cell right" id="d${idx}_c_ench_hp">0%</div><div class="cell right" id="d${idx}_c_ench_atk">0%</div><div class="cell right" id="d${idx}_c_ench_df">0%</div>
-        <div class="cell">펜던트 %</div><div class="cell right" id="d${idx}_c_pend_hp">0%</div><div class="cell right" id="d${idx}_c_pend_atk">0%</div><div class="cell right" id="d${idx}_c_pend_df">0%</div>
+      <div class="cell">장신구 %</div><div class="cell right" id="d${idx}_c_acc_hp">0%</div><div class="cell right" id="d${idx}_c_acc_atk">0%</div><div class="cell right" id="d${idx}_c_acc_df">0%</div>
+      <div class="cell">인첸트 %</div><div class="cell right" id="d${idx}_c_ench_hp">0%</div><div class="cell right" id="d${idx}_c_ench_atk">0%</div><div class="cell right" id="d${idx}_c_ench_df">0%</div>
+      <div class="cell">펜던트 %</div><div class="cell right" id="d${idx}_c_pend_hp">0%</div><div class="cell right" id="d${idx}_c_pend_atk">0%</div><div class="cell right" id="d${idx}_c_pend_df">0%</div>
 
-        <div class="cell section" style="grid-column:1/5">정령/버프/디버프</div>
-        <div class="cell">정령 +</div><div class="cell right" id="d${idx}_c_spf_hp">0</div><div class="cell right" id="d${idx}_c_spf_atk">0</div><div class="cell right" id="d${idx}_c_spf_df">0</div>
-        <div class="cell">정령 %</div><div class="cell right" id="d${idx}_c_spp_hp">0%</div><div class="cell right" id="d${idx}_c_spp_atk">0%</div><div class="cell right" id="d${idx}_c_spp_df">0%</div>
-        <div class="cell">정령 부가옵</div><div class="cell right" id="d${idx}_c_spe_hp">0</div><div class="cell right" id="d${idx}_c_spe_atk">0</div><div class="cell right" id="d${idx}_c_spe_df">0</div>
-        <div class="cell">버프 %</div><div class="cell right" id="d${idx}_c_bf_hp">0%</div><div class="cell right" id="d${idx}_c_bf_atk">0%</div><div class="cell right" id="d${idx}_c_bf_df">0%</div>
-        <div class="cell">디버프 %</div><div class="cell right" id="d${idx}_c_db_hp">0%</div><div class="cell right" id="d${idx}_c_db_atk">0%</div><div class="cell right" id="d${idx}_c_db_df">0%</div>
+      <div class="cell">정령 +(플랫)</div><div class="cell right" id="d${idx}_c_spf_hp">0</div><div class="cell right" id="d${idx}_c_spf_atk">0</div><div class="cell right" id="d${idx}_c_spf_df">0</div>
+      <div class="cell">정령 %(퍼옵)</div><div class="cell right" id="d${idx}_c_spp_hp">0%</div><div class="cell right" id="d${idx}_c_spp_atk">0%</div><div class="cell right" id="d${idx}_c_spp_df">0%</div>
+      <div class="cell">정령 부가</div><div class="cell right" id="d${idx}_c_spe_hp">0</div><div class="cell right" id="d${idx}_c_spe_atk">0</div><div class="cell right" id="d${idx}_c_spe_df">0</div>
+      <div class="cell">버프 %</div><div class="cell right" id="d${idx}_c_bf_hp">0%</div><div class="cell right" id="d${idx}_c_bf_atk">0%</div><div class="cell right" id="d${idx}_c_bf_df">0%</div>
+      <div class="cell">디버프 %</div><div class="cell right" id="d${idx}_c_db_hp">0%</div><div class="cell right" id="d${idx}_c_db_atk">0%</div><div class="cell right" id="d${idx}_c_db_df">0%</div>
 
-        <div class="cell section" style="grid-column:1/5">최종</div>
-        <div class="cell sum">체력</div><div class="cell big" id="d${idx}_c_fin_hp">-</div>
-        <div class="cell sum">공격력</div><div class="cell big" id="d${idx}_c_fin_atk">-</div>
-        <div class="cell sum">방어력</div><div class="cell big" id="d${idx}_c_fin_df">-</div>
+      <div class="cell section center" style="grid-column:1/5">최종 스탯</div>
+      <div class="cell sum">체력</div><div class="cell big" id="d${idx}_c_fin_hp">-</div>
+      <div class="cell sum">공격력</div><div class="cell big" id="d${idx}_c_fin_atk">-</div>
+      <div class="cell sum">방어력</div><div class="cell big" id="d${idx}_c_fin_df">-</div>
 
-        <div class="cell">E-Value</div><div class="cell big" id="d${idx}_c_eval" style="grid-column:2/5">-</div>
-        <div class="cell">B-Value</div><div class="cell big" id="d${idx}_c_bval" style="grid-column:2/5">-</div>
-      </div>
-    `;
-    allResults.appendChild(sheet);
-  }
+      <div class="cell section center" style="grid-column:1/5">지표</div>
+      <div class="cell">E-Value</div><div class="cell big" id="d${idx}_c_eval" style="grid-column:2/5">-</div>
+      <div class="cell">B-Value</div><div class="cell big" id="d${idx}_c_bval" style="grid-column:2/5">-</div>
+    </div>
+  `;
+  allResults.appendChild(sheet);
+}
 
   function num(id){ return Number(document.getElementById(id)?.value||0); }
   function setText(id, v){ const el=document.getElementById(id); if(el) el.textContent=v; }
