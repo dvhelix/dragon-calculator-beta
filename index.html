@@ -195,7 +195,7 @@ function calcPredict(base,gem,pot,acc,pend,spf,spp,spe,col,bf,db){
   const f = new Stats(
     s6.hp + Math.floor(base.hp*bf.hp) - Math.floor(base.hp*db.hp),
     s6.atk + Math.floor(base.atk*bf.atk) - Math.floor(base.atk*db.atk),
-    s6.df + Math.floor(base.df*bf.df) - Math.floor(base.df*db.atk)
+    s6.df + Math.floor(base.df*bf.df) - Math.floor(base.df*db.df)
   );
   return [f,eVal(f),bVal(f)];
 }
