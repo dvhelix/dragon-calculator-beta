@@ -165,7 +165,7 @@ function renderOneInput(idx){
   box.innerHTML = `
     <div class="row">
       <strong style="font-size:16px">드래곤 ${idx}</strong>
-      <label>이름 <input id="d${idx}_name" type="text" placeholder="예: 헬릭스"></label>
+      <label>이름 <input id="d${idx}_name" type="text"></label>
     </div>
 
     <fieldset>
@@ -205,9 +205,8 @@ function renderOneInput(idx){
       </div>
       <div class="row">
         인첸트 HP <input id="d${idx}_m_ench_hp" type="number" value="0">
-        ATK <input id="d${idx}_m_ench_atk" type="number" value="21">
+        ATK <input id="d${idx}_m_ench_atk" type="number" value="0">
         DEF <input id="d${idx}_m_ench_df" type="number" value="0">
-        <span class="small">(예: ATK 21%)</span>
       </div>
     </fieldset>
 
