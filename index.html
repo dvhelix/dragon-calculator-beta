@@ -280,15 +280,88 @@ function calcPredict(base,gem,pot,acc,pend,spf,spp,spe,col,bf,db){
 }
 
 /* =========================
-   자동/수동 모드 전환
+   장신구 테이블 및 렌더링
    ========================= */
-document.querySelectorAll('input[name="mode"]').forEach(r=>{
-  r.addEventListener('change',()=>{
-    const mode=document.querySelector('input[name="mode"]:checked').value;
-    document.getElementById('autoUI').style.display=(mode==='auto')?'block':'none';
-    document.getElementById('manualUI').style.display=(mode==='manual')?'block':'none';
-    document.getElementById('autoResult').textContent='';
-    document.getElementById('manualResult').innerHTML='';
+const ACC_TABLE = [
+  ["바뿔(공/방)",19,0,10,9],["바뿔(체/방)",19,10,0,9],["바뿔(공/체)",19,9,10,0],
+  ["불뿔(공/체)",19,6,13,0],["불뿔(공/방)",19,0,13,6],
+  ["물뿔(체/방)",19,13,0,6],["물뿔(체/공)",19,13,6,0],
+  ["대뿔(방/공)",19,0,6,13],["대뿔(방/체)",19,6,0,13],
+  ["여보",19,0,0,19],["황보",19,0,19,0],["악보",19,19,0,0],
+  ["바뿔(공/방)",18,0,9,9],["바뿔(체/방)",18,9,0,9],["바뿔(공/체)",18,9,9,0],
+  ["불뿔(공/체)",18,6,12,0],["불뿔(공/방)",18,0,12,6],
+  ["물뿔(체/방)",18,12,0,6],["물뿔(체/공)",18,12,6,0],
+  ["대뿔(방/공)",18,0,6,12],["대뿔(방/체)",18,6,0,12],
+  ["여보",18,0,0,18],["황보",18,0,18,0],["악보",18,18,0,0],
+  ["바뿔(공/방)",17,0,9,8],["바뿔(체/방)",17,9,0,8],["바뿔(공/체)",17,9,8,0],
+  ["불뿔(공/체)",17,6,11,0],["불뿔(공/방)",17,0,11,6],
+  ["물뿔(체/방)",17,11,0,6],["물뿔(체/공)",17,11,6,0],
+  ["대뿔(방/공)",17,0,6,11],["대뿔(방/체)",17,6,0,11],
+  ["여보",17,0,0,17],["황보",17,0,17,0],["악보",17,17,0,0],
+];
+
+let accCheckboxes = [];
+const accListEl = document.getElementById('accList');
+
+function renderAccessories() {
+  accListEl.innerHTML = '';
+  accCheckboxes = [];
+  ACC_TABLE.forEach((r, i) => {
+    const [n, l, h, a, d] = r;
+    const id = 'acc_' + i;
+    const line = document.createElement('div');
+    line.innerHTML = `<label><input type="checkbox" id="${id}"> ${n} Lv${l} | HP+${h}% ATK+${a}% DEF+${d}%</label>`;
+    accListEl.appendChild(line);
+    accCheckboxes.push({ id, name: n, level: l, hp: h, atk: a, df: d });
+  });
+}
+renderAccessories();
+
+function selectNone() {
+  accCheckboxes.forEach(o => document.getElementById(o.id).checked = false);
+}
+function toggleLevel(level) {
+  const t = accCheckboxes.filter(o => o.level === level);
+  const allOn = t.every(o => document.getElementById(o.id).checked);
+  t.forEach(o => document.getElementById(o.id).checked = !allOn);
+}
+
+/* =========================
+   드래곤 기본 스탯 테이블
+   ========================= */
+const dragon={
+ "7.0":{공격형:new Stats(876,285,161),방어형:new Stats(788,185,283),체력형:new Stats(1252,176,176),공방형:new Stats(720,242,243),체공형:new Stats(1080,262,133),체방형:new Stats(1080,133,262)},
+ "8.0":{공격형:new Stats(876,305,161),방어형:new Stats(788,185,303),체력형:new Stats(1332,176,176),공방형:new Stats(720,252,253),체공형:new Stats(1120,272,133),체방형:new Stats(1120,133,272)},
+ "9.0":{공격형:new Stats(876,325,161),방어형:new Stats(788,185,323),체력형:new Stats(1412,176,176),공방형:new Stats(720,262,263),체공형:new Stats(1160,282,133),체방형:new Stats(1160,133,282)}
+};
+  
+/* =========================
+   자동/수동 모드 전환 (버그 수정 버전)
+   ========================= */
+const autoUI = document.getElementById('autoUI');
+const manualUI = document.getElementById('manualUI');
+const autoResult = document.getElementById('autoResult');
+const manualResult = document.getElementById('manualResult');
+
+function switchMode(mode){
+  if(mode === 'auto'){
+    autoUI.style.display = 'block';
+    manualUI.style.display = 'none';
+  } else {
+    autoUI.style.display = 'none';
+    manualUI.style.display = 'block';
+  }
+  // 결과 초기화
+  autoResult.textContent = '';
+  manualResult.innerHTML = '';
+}
+
+switchMode('auto');
+
+document.querySelectorAll('input[name="mode"]').forEach(r => {
+  r.addEventListener('change', () => {
+    const mode = document.querySelector('input[name="mode"]:checked').value;
+    switchMode(mode);
   });
 });
 
