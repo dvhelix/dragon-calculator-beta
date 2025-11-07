@@ -17,12 +17,11 @@
   .btn.primary { border-color:#2d6cdf; background:#2d6cdf; color:#fff; }
   .btn:hover { background:#f0f0f0; }
   .toolbar { display:flex; gap:8px; margin:8px 0; flex-wrap:wrap; }
-  #result { white-space:pre; background:#111; color:#e5e5e5; padding:12px; border-radius:6px; min-height:220px; }
+  #result_auto, #result_manual { white-space:pre; background:#111; color:#e5e5e5; padding:12px; border-radius:6px; min-height:220px; margin-top:12px; }
   .small { color:#888; font-size:12px; }
   .row-spirit { display: grid; grid-template-columns: 150px 90px 90px 90px auto; align-items: center; column-gap: 8px; margin-bottom: 6px; }
   .row-spirit strong { text-align: right; padding-right: 4px; font-size: 14px; font-weight: bold; }
   .row-spirit input[type="number"] { width: 84px; height: 28px; text-align: center; border: 1px solid #aaa; border-radius: 4px; font-size: 13px; background: #fff; }
-  .row-spirit .small { text-align: left; color: #888; font-size: 12px; margin-left: 4px; }
 </style>
 </head>
 <body>
@@ -36,9 +35,8 @@
     <label><input type="radio" name="mode" value="manual"> 수동 계산기</label>
   </fieldset>
 
-  <!-- ✅ 자동 계산기 (기존 전체 구조) -->
+  <!-- ✅ 자동 계산기 -->
   <div id="auto_mode">
-    <!-- 등급 / 타입 -->
     <fieldset>
       <legend>등급 / 타입 선택</legend>
       <div class="row">
@@ -97,30 +95,12 @@
     <!-- 펜던트 -->
     <fieldset>
       <legend>펜던트</legend>
-      <div class="row" style="margin-bottom:8px;">
-        <strong>버전 선택:</strong>
-        <label><input type="radio" name="pendant_ver" value="v1" checked>Ver1</label>
-        <label><input type="radio" name="pendant_ver" value="v2">Ver2</label>
-        <label><input type="radio" name="pendant_ver" value="v3">Ver3</label>
-      </div>
-      <div class="row" id="pendant_auto_row">
+      <div class="row">
         <strong>종류 / 값 입력:</strong>
         <label><input type="radio" name="pendant_mode" value="별" checked>별</label>
         <label><input type="radio" name="pendant_mode" value="달">달</label>
         <label><input type="radio" name="pendant_mode" value="태양">태양</label>
         <input id="pendant_value" type="number" value="12" style="width:90px;"> %
-      </div>
-      <div class="row" id="pendant_stats_row" style="display:none;">
-        <strong>Ver2 스탯 선택:</strong>
-        <label><input type="checkbox" class="pendStat" value="HP" checked>HP</label>
-        <label><input type="checkbox" class="pendStat" value="ATK" checked>ATK</label>
-        <label><input type="checkbox" class="pendStat" value="DEF" checked>DEF</label>
-      </div>
-      <div id="pendant_manual" style="margin-top:8px; display:none;">
-        <strong>수동 입력:</strong>
-        HP <input id="pend_manual_hp" type="number" value="0">%
-        ATK <input id="pend_manual_atk" type="number" value="0">%
-        DEF <input id="pend_manual_df" type="number" value="0">%
       </div>
     </fieldset>
 
@@ -133,7 +113,6 @@
       <div class="row-spirit"><strong>디버프 (%)</strong><input id="db_hp" type="number" value="0"><input id="db_atk" type="number" value="0"><input id="db_df" type="number" value="0"></div>
     </fieldset>
 
-    <fieldset><legend>기타</legend><div class="row">Top N <input id="top_n" type="number" value="5"></div></fieldset>
     <div class="toolbar">
       <button class="btn primary" type="button" onclick="calc()">계산하기</button>
       <button class="btn" type="button" onclick="downloadTxt()">저장하기 (.txt)</button>
@@ -158,9 +137,7 @@
         </label>
       </div>
     </fieldset>
-    <fieldset>
-      <legend>젬 슬롯 (5개)</legend><div id="gem_slots"></div>
-    </fieldset>
+    <fieldset><legend>젬 슬롯 (5개)</legend><div id="gem_slots"></div></fieldset>
     <fieldset>
       <legend>장신구 / 인첸트 (%)</legend>
       <div class="row">장신구 HP <input id="m_acc_hp" type="number" value="0"> ATK <input id="m_acc_atk" type="number" value="0"> DEF <input id="m_acc_df" type="number" value="0"></div>
@@ -181,8 +158,10 @@
     <div class="toolbar"><button class="btn primary" onclick="manualCalc()">수동 계산</button></div>
   </div>
 
-  <h3>결과</h3>
-  <div id="result"></div>
+  <h3>자동 계산 결과</h3>
+  <div id="result_auto"></div>
+  <h3>수동 계산 결과</h3>
+  <div id="result_manual"></div>
 
 <script>
 /* =========================
@@ -200,10 +179,10 @@ function calcPredict(base,gem,pot,acc,pend,spf,spp,spe,col,bf,db){
   const s4=new Stats(s3.hp+spe.hp, s3.atk+spe.atk, s3.df+spe.df);
   const s5=new Stats(Math.floor(s4.hp*(1+pend.hp)), Math.floor(s4.atk*(1+pend.atk)), Math.floor(s4.df*(1+pend.df)));
   const s6=new Stats(s5.hp+col.hp, s5.atk+col.atk, s5.df+col.df);
-  const f = new Stats(
-    s6.hp + Math.floor(base.hp*bf.hp) - Math.floor(base.hp*db.hp),
-    s6.atk + Math.floor(base.atk*bf.atk) - Math.floor(base.atk*db.atk),
-    s6.df + Math.floor(base.df*bf.df) - Math.floor(base.df*db.df)
+  const f=new Stats(
+    s6.hp+Math.floor(base.hp*bf.hp)-Math.floor(base.hp*db.hp),
+    s6.atk+Math.floor(base.atk*bf.atk)-Math.floor(base.atk*db.atk),
+    s6.df+Math.floor(base.df*bf.df)-Math.floor(base.df*db.df)
   );
   return [f,eVal(f),bVal(f)];
 }
@@ -251,62 +230,91 @@ document.querySelectorAll('input[name="mode"]').forEach(r=>{
    수동 계산
    ========================= */
 function manualCalc(){
-  const lvl = document.getElementById('m_level').value;
-  const type = document.getElementById('m_type').value;
-  const base = dragon[lvl][type];
-
-  // 젬 합산
-  let g_hp = 0, g_atk = 0, g_df = 0;
-  for (let i = 1; i <= 5; i++) {
-    const t = document.getElementById(`slot_type_${i}`).value;
-    const v = Number(document.getElementById(`slot_val_${i}`).value || 0);
-    if (t === "HP") g_hp += v;
-    if (t === "ATK") g_atk += v;
-    if (t === "DEF") g_df += v;
+  const lvl=document.getElementById('m_level').value;
+  const type=document.getElementById('m_type').value;
+  const base=dragon[lvl][type];
+  let g_hp=0,g_atk=0,g_df=0;
+  for(let i=1;i<=5;i++){
+    const t=document.getElementById(`slot_type_${i}`).value;
+    const v=Number(document.getElementById(`slot_val_${i}`).value||0);
+    if(t==="HP")g_hp+=v;
+    if(t==="ATK")g_atk+=v;
+    if(t==="DEF")g_df+=v;
   }
-  const gem = new Stats(g_hp, g_atk, g_df);
+  const gem=new Stats(g_hp,g_atk,g_df);
 
-  // 장신구 + 인첸트 (%)
-  const acc = new Stats(
-    (Number(document.getElementById("m_acc_hp").value) + Number(document.getElementById("m_ench_hp").value)) / 100,
-    (Number(document.getElementById("m_acc_atk").value) + Number(document.getElementById("m_ench_atk").value)) / 100,
-    (Number(document.getElementById("m_acc_df").value) + Number(document.getElementById("m_ench_df").value)) / 100
+  const acc=new Stats(
+    (Number(document.getElementById("m_acc_hp").value)+Number(document.getElementById("m_ench_hp").value))/100,
+    (Number(document.getElementById("m_acc_atk").value)+Number(document.getElementById("m_ench_atk").value))/100,
+    (Number(document.getElementById("m_acc_df").value)+Number(document.getElementById("m_ench_df").value))/100
   );
 
-  // 펜던트 (%)
-  const pend = new Stats(
-    Number(document.getElementById("m_pend_hp").value) / 100,
-    Number(document.getElementById("m_pend_atk").value) / 100,
-    Number(document.getElementById("m_pend_df").value) / 100
+  const pend=new Stats(
+    Number(document.getElementById("m_pend_hp").value)/100,
+    Number(document.getElementById("m_pend_atk").value)/100,
+    Number(document.getElementById("m_pend_df").value)/100
   );
 
-  // 기본 상수
-  const pot = new Stats(24, 6, 6);
-  const col = new Stats(240, 60, 60);
+  const pot=new Stats(24,6,6);
+  const col=new Stats(240,60,60);
 
-  // 정령 / 버프 / 디버프 값 (수동모드 입력 사용)
-  const val = id => Number(document.getElementById(id)?.value || 0);
-  const spf = new Stats(val('m_sf_hp'), val('m_sf_atk'), val('m_sf_df'));
-  const spp = new Stats(val('m_sp_hp') / 100, val('m_sp_atk') / 100, val('m_sp_df') / 100);
-  const spe = new Stats(0, 0, 0);
-  const bf  = new Stats(val('m_bf_hp') / 100, val('m_bf_atk') / 100, val('m_bf_df') / 100);
-  const db  = new Stats(val('m_db_hp') / 100, val('m_db_atk') / 100, val('m_db_df') / 100);
+  const val=id=>Number(document.getElementById(id)?.value||0);
+  const spf=new Stats(val('m_sf_hp'),val('m_sf_atk'),val('m_sf_df'));
+  const spp=new Stats(val('m_sp_hp')/100,val('m_sp_atk')/100,val('m_sp_df')/100);
+  const spe=new Stats(0,0,0);
+  const bf=new Stats(val('m_bf_hp')/100,val('m_bf_atk')/100,val('m_bf_df')/100);
+  const db=new Stats(val('m_db_hp')/100,val('m_db_atk')/100,val('m_db_df')/100);
 
-  // 계산
-  const [fin, E, B] = calcPredict(base, gem, pot, acc, pend, spf, spp, spe, col, bf, db);
+  const [fin,E,B]=calcPredict(base,gem,pot,acc,pend,spf,spp,spe,col,bf,db);
 
-  // 출력
-  const R = document.getElementById("result");
-  R.textContent = `💎 수동 계산 결과\n\n` +
-                  `드래곤: ${lvl} ${type}\n` +
-                  `HP=${fin.hp}\nATK=${fin.atk}\nDEF=${fin.df}\n` +
-                  `E=${E.toFixed(0)}\nB=${(B / 1e6).toFixed(3)}`;
+  const R=document.getElementById("result_manual");
+  R.textContent=`💎 수동 계산 결과\n\n드래곤: ${lvl} ${type}\nHP=${fin.hp}\nATK=${fin.atk}\nDEF=${fin.df}\nE=${E.toFixed(0)}\nB=${(B/1e6).toFixed(3)}`;
+}
+
+/* =========================
+   자동 계산 함수
+   ========================= */
+function calc(){
+  const lvl=document.querySelector('input[name="level"]:checked').value;
+  const types=[...document.querySelectorAll('.dtype:checked')].map(x=>x.value);
+  const gem=new Stats(
+    Number(document.querySelector('input[name="gem_hp"]:checked').value),
+    Number(document.querySelector('input[name="gem_atk"]:checked').value),
+    Number(document.querySelector('input[name="gem_df"]:checked').value)
+  );
+
+  let acc_hp=0,acc_atk=0,acc_df=0;
+  accCheckboxes.forEach(o=>{
+    if(document.getElementById(o.id).checked){
+      acc_hp+=o.hp;acc_atk+=o.atk;acc_df+=o.df;
+    }
+  });
+  const acc=new Stats(acc_hp/100,acc_atk/100,acc_df/100);
+  const pendVal=Number(document.getElementById("pendant_value").value)/100;
+  const pend=new Stats(pendVal,pendVal,pendVal);
+
+  const pot=new Stats(24,6,6);
+  const col=new Stats(240,60,60);
+  const val=id=>Number(document.getElementById(id)?.value||0);
+  const spf=new Stats(val('sf_hp'),val('sf_atk'),val('sf_df'));
+  const spp=new Stats(val('sp_hp')/100,val('sp_atk')/100,val('sp_df')/100);
+  const spe=new Stats(0,0,0);
+  const bf=new Stats(val('bf_hp')/100,val('bf_atk')/100,val('bf_df')/100);
+  const db=new Stats(val('db_hp')/100,val('db_atk')/100,val('db_df')/100);
+
+  const R=document.getElementById("result_auto");
+  R.textContent="";
+  types.forEach(type=>{
+    const base=dragon[lvl][type];
+    const [fin,E,B]=calcPredict(base,gem,pot,acc,pend,spf,spp,spe,col,bf,db);
+    R.textContent+=`🐉 ${lvl} ${type}\nHP=${fin.hp}\nATK=${fin.atk}\nDEF=${fin.df}\nE=${E.toFixed(0)}\nB=${(B/1e6).toFixed(3)}\n\n`;
+  });
 }
 
 /* =========================
    자동 계산용 장신구 테이블
    ========================= */
-const ACC_TABLE = [
+const ACC_TABLE=[
   ["바뿔(공/방)",19,0,10,9],["바뿔(체/방)",19,10,0,9],["바뿔(공/체)",19,9,10,0],
   ["불뿔(공/체)",19,6,13,0],["불뿔(공/방)",19,0,13,6],
   ["물뿔(체/방)",19,13,0,6],["물뿔(체/공)",19,13,6,0],
@@ -327,41 +335,42 @@ const ACC_TABLE = [
 /* =========================
    장신구 렌더링 (자동모드)
    ========================= */
-let accCheckboxes = [];
-const accListEl = document.getElementById('accList');
-function renderAccessories() {
-  if (!accListEl) return;
-  accListEl.innerHTML = '';
-  accCheckboxes = [];
-  ACC_TABLE.forEach((r, i) => {
-    const [n, l, h, a, d] = r;
-    const id = 'acc_' + i;
-    const line = document.createElement('div');
-    line.innerHTML = `<label><input type="checkbox" id="${id}"> ${n} Lv${l} | HP+${h}% ATK+${a}% DEF+${d}%</label>`;
+let accCheckboxes=[];
+const accListEl=document.getElementById('accList');
+function renderAccessories(){
+  if(!accListEl)return;
+  accListEl.innerHTML='';
+  accCheckboxes=[];
+  ACC_TABLE.forEach((r,i)=>{
+    const[n,l,h,a,d]=r;
+    const id='acc_'+i;
+    const line=document.createElement('div');
+    line.innerHTML=`<label><input type="checkbox" id="${id}"> ${n} Lv${l} | HP+${h}% ATK+${a}% DEF+${d}%</label>`;
     accListEl.appendChild(line);
-    accCheckboxes.push({ id, name: n, level: l, hp: h, atk: a, df: d });
+    accCheckboxes.push({id,name:n,level:l,hp:h,atk:a,df:d});
   });
 }
 renderAccessories();
-
-function selectNone() { accCheckboxes.forEach(o => document.getElementById(o.id).checked = false); }
-function toggleLevel(level) {
-  const t = accCheckboxes.filter(o => o.level === level);
-  const allOn = t.every(o => document.getElementById(o.id).checked);
-  t.forEach(o => document.getElementById(o.id).checked = !allOn);
+function selectNone(){accCheckboxes.forEach(o=>document.getElementById(o.id).checked=false);}
+function toggleLevel(level){
+  const t=accCheckboxes.filter(o=>o.level===level);
+  const allOn=t.every(o=>document.getElementById(o.id).checked);
+  t.forEach(o=>document.getElementById(o.id).checked=!allOn);
 }
 
 /* =========================
    저장 기능 (공통)
    ========================= */
 function downloadTxt(){
-  const text=document.getElementById("result").textContent||"";
-  if(!text.trim()) return;
+  const textA=document.getElementById("result_auto").textContent||"";
+  const textM=document.getElementById("result_manual").textContent||"";
+  const text=(textA.trim()?("🔹자동 계산 결과\n\n"+textA+"\n\n"):"")+(textM.trim()?("🔹수동 계산 결과\n\n"+textM):"");
+  if(!text.trim())return;
   const blob=new Blob([text],{type:"text/plain;charset=utf-8"});
   const url=URL.createObjectURL(blob);
   const a=document.createElement("a");
-  a.href=url; a.download="dragon_result.txt";
-  document.body.appendChild(a); a.click(); a.remove();
+  a.href=url;a.download="dragon_result.txt";
+  document.body.appendChild(a);a.click();a.remove();
   URL.revokeObjectURL(url);
 }
 </script>
