@@ -170,6 +170,14 @@
       <legend>펜던트 입력 (%)</legend>
       <div class="row">HP <input id="m_pend_hp" type="number" value="0"> ATK <input id="m_pend_atk" type="number" value="0"> DEF <input id="m_pend_df" type="number" value="0"></div>
     </fieldset>
+
+    <fieldset>
+      <legend>정령 / 버프 / 디버프</legend>
+      <div class="row-spirit"><strong>정령 + (플옵)</strong><input id="m_sf_hp" type="number" value="0"><input id="m_sf_atk" type="number" value="0"><input id="m_sf_df" type="number" value="0"></div>
+      <div class="row-spirit"><strong>정령 % (퍼옵)</strong><input id="m_sp_hp" type="number" value="0"><input id="m_sp_atk" type="number" value="0"><input id="m_sp_df" type="number" value="0"></div>
+      <div class="row-spirit"><strong>버프 (%)</strong><input id="m_bf_hp" type="number" value="0"><input id="m_bf_atk" type="number" value="0"><input id="m_bf_df" type="number" value="0"></div>
+      <div class="row-spirit"><strong>디버프 (%)</strong><input id="m_db_hp" type="number" value="0"><input id="m_db_atk" type="number" value="0"><input id="m_db_df" type="number" value="0"></div>
+    </fieldset>
     <div class="toolbar"><button class="btn primary" onclick="manualCalc()">수동 계산</button></div>
   </div>
 
@@ -276,13 +284,13 @@ function manualCalc(){
   const pot = new Stats(24, 6, 6);
   const col = new Stats(240, 60, 60);
 
-  // 정령 / 버프 / 디버프 값 (자동모드 UI 값 그대로 활용)
+  // 정령 / 버프 / 디버프 값 (수동모드 입력 사용)
   const val = id => Number(document.getElementById(id)?.value || 0);
-  const spf = new Stats(val('sf_hp'), val('sf_atk'), val('sf_df'));
-  const spp = new Stats(val('sp_hp') / 100, val('sp_atk') / 100, val('sp_df') / 100);
+  const spf = new Stats(val('m_sf_hp'), val('m_sf_atk'), val('m_sf_df'));
+  const spp = new Stats(val('m_sp_hp') / 100, val('m_sp_atk') / 100, val('m_sp_df') / 100);
   const spe = new Stats(0, 0, 0);
-  const bf  = new Stats(val('bf_hp') / 100, val('bf_atk') / 100, val('bf_df') / 100);
-  const db  = new Stats(val('db_hp') / 100, val('db_atk') / 100, val('db_df') / 100);
+  const bf  = new Stats(val('m_bf_hp') / 100, val('m_bf_atk') / 100, val('m_bf_df') / 100);
+  const db  = new Stats(val('m_db_hp') / 100, val('m_db_atk') / 100, val('m_db_df') / 100);
 
   // 계산
   const [fin, E, B] = calcPredict(base, gem, pot, acc, pend, spf, spp, spe, col, bf, db);
