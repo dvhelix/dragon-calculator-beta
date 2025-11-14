@@ -253,11 +253,8 @@
 
     <!-- 정령/버프/디버프 -->
     <fieldset>
-      <legend>정령 / 버프 / 디버프</legend>
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-        <div style="font-weight:bold; color:black;">(HP / ATK / DEF)</div>
-        <button class="btn" type="button" onclick="resetSpiritBuffs()">전체 초기화</button>
-      </div>
+      <legend>정령 / 버프 / 디버프 <button class="btn" type="button" onclick="resetSpiritBuffs()" style="margin-left:8px;font-size:12px;padding:4px 10px;">전체 초기화</button></legend>
+      <div style="font-weight:bold; color:black; margin-bottom:6px;">(HP / ATK / DEF)</div>
 
       <div class="row-spirit"><strong>정령 + (플옵)</strong><input id="sf_hp" type="number" value="0"><input id="sf_atk" type="number" value="0"><input id="sf_df" type="number" value="0"></div>
       <div class="row-spirit"><strong>정령 % (퍼옵)</strong><input id="sp_hp" type="number" value="0"><input id="sp_atk" type="number" value="0"><input id="sp_df" type="number" value="0"><span class="small">(% 입력)</span></div>
