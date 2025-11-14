@@ -17,7 +17,8 @@
   .hint{color:#666;margin-bottom:14px}
   .small{color:#888;font-size:12px}
 
-  .modebar{margin-bottom:16px;display:flex;gap:10px;flex-wrap:wrap}
+  .header-fixed{position:sticky;top:0;background:var(--bg);z-index:100;padding:12px 0;border-bottom:2px solid var(--line);margin-bottom:16px}
+  .modebar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:8px}
   .btn{padding:8px 14px;border:1px solid #999;background:#fff;cursor:pointer;border-radius:6px}
   .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
   .btn:hover{background:#f0f0f0}
@@ -78,16 +79,87 @@
     white-space:pre; background:#111; color:#e5e5e5;
     padding:12px; border-radius:8px; min-height:220px;
   }
+
+  /* 모바일 반응형 */
+  @media (max-width: 768px) {
+    body{margin:12px;}
+    .header-fixed{padding:8px 0;}
+    h2{font-size:18px;}
+    .hint{font-size:11px;}
+
+    .modebar{gap:6px;}
+    .btn{padding:6px 10px;font-size:13px;}
+
+    .row{flex-direction:column;align-items:flex-start;gap:6px;}
+    .row label{width:100%;}
+
+    .row-spirit{
+      grid-template-columns:1fr;
+      gap:6px;
+    }
+    .row-spirit strong{text-align:left;padding-right:0;margin-bottom:4px;}
+    .row-spirit input{width:100%;}
+
+    input[type="number"],select,input[type="text"]{width:100% !important;box-sizing:border-box;}
+
+    .toolbar{gap:6px;}
+    .toolbar .btn{font-size:11px;padding:6px 8px;}
+
+    .acc-list{max-height:180px;font-size:13px;}
+
+    fieldset{padding:10px;}
+    legend{font-size:14px;}
+
+    .sheet{
+      min-width:unset;
+      width:100%;
+      padding:10px;
+    }
+    .sheet .name{font-size:16px;}
+
+    .grid{
+      grid-template-columns:120px 1fr;
+      font-size:12px;
+    }
+    .cell{padding:5px 6px;font-size:12px;}
+    .cell.big{font-size:16px;}
+    .cell.sum{font-size:13px;}
+    .cell:nth-child(4n+1){grid-column:1;}
+    .cell:nth-child(4n+2),.cell:nth-child(4n+3),.cell:nth-child(4n+4){grid-column:2;}
+
+    /* 헤더는 4열 유지 */
+    .grid > .cell.h:nth-child(1){grid-column:1;}
+    .grid > .cell.h:nth-child(2){grid-column:2;}
+    .grid > .cell.h:nth-child(3){grid-column:3;}
+    .grid > .cell.h:nth-child(4){grid-column:4;}
+
+    /* section은 전체 너비 */
+    .cell.section{grid-column:1/3 !important;}
+
+    /* 최종스탯, 지표 부분 2열 구조 */
+    .grid .cell.sum{grid-column:1;}
+    .grid .cell.big{grid-column:2;}
+
+    .results-row{flex-direction:column;gap:12px;}
+
+    #pendant_auto_row{flex-direction:column;align-items:flex-start;}
+    #pendant_stats_row{flex-direction:column;align-items:flex-start;}
+    #pendant_manual{flex-direction:column;align-items:flex-start;gap:8px;}
+
+    pre.result{font-size:11px;padding:10px;min-height:150px;overflow-x:auto;}
+  }
 </style>
 </head>
 
 <body>
-  <h2>드래곤 비벨/이벨 통합 계산기</h2>
-  <div class="modebar">
-    <button class="btn primary" id="btnAuto">자동 계산기</button>
-    <button class="btn" id="btnManual">수동 계산기</button>
+  <div class="header-fixed">
+    <h2>드래곤 비벨/이벨 통합 계산기</h2>
+    <div class="modebar">
+      <button class="btn primary" id="btnAuto">자동 계산기</button>
+      <button class="btn" id="btnManual">수동 계산기</button>
+    </div>
+    <div class="hint small">모든 입력은 <b>HP / ATK / DEF</b> 순서입니다. · made by 헬릭스</div>
   </div>
-  <div class="hint small">모든 입력은 <b>HP / ATK / DEF</b> 순서입니다. · made by 헬릭스</div>
 
   <!-- =========================
        자동 계산기
@@ -191,7 +263,10 @@
     <!-- 정령/버프/디버프 -->
     <fieldset>
       <legend>정령 / 버프 / 디버프</legend>
-      <div style="font-weight:bold; color:black; margin-bottom:6px;">(HP / ATK / DEF)</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <div style="font-weight:bold; color:black;">(HP / ATK / DEF)</div>
+        <button class="btn" type="button" onclick="resetSpiritBuffs()">전체 초기화</button>
+      </div>
 
       <div class="row-spirit"><strong>정령 + (플옵)</strong><input id="sf_hp" type="number" value="0"><input id="sf_atk" type="number" value="0"><input id="sf_df" type="number" value="0"></div>
       <div class="row-spirit"><strong>정령 % (퍼옵)</strong><input id="sp_hp" type="number" value="0"><input id="sp_atk" type="number" value="0"><input id="sp_df" type="number" value="0"><span class="small">(% 입력)</span></div>
@@ -276,6 +351,13 @@
     return [f, eVal(f), bVal(f)];
   }
   function val(id){ return Number(document.getElementById(id)?.value||0); }
+
+  function resetSpiritBuffs(){
+    ['sf_hp','sf_atk','sf_df','sp_hp','sp_atk','sp_df','se_hp','se_atk','se_df','bf_hp','bf_atk','bf_df','db_hp','db_atk','db_df'].forEach(id=>{
+      const el=document.getElementById(id);
+      if(el) el.value=0;
+    });
+  }
 
   /* =========================
      자동 계산기 데이터/렌더
