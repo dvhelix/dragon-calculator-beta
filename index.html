@@ -144,6 +144,7 @@
     <div class="modebar">
       <button class="btn primary" id="btnAuto">자동 계산기</button>
       <button class="btn" id="btnManual">수동 계산기</button>
+      <button class="btn" id="btnServer">저장 서버</button>
     </div>
     <div class="hint small">모든 입력은 <b>HP / ATK / DEF</b> 순서입니다. · made by 헬릭스</div>
   </div>
@@ -294,6 +295,7 @@
     <div style="margin:20px 0;display:flex;gap:10px;flex-wrap:wrap;">
       <button class="btn primary" onclick="manualCalcAll()">수동 계산</button>
       <button class="btn" onclick="savePngAll()">결과를 PNG로 저장</button>
+      <button class="btn" onclick="saveToServer()" style="background:#00aa88;color:#fff;border-color:#00aa88">서버에 저장</button>
     </div>
 
     <!-- 결과 시트 (가로 비교) -->
@@ -302,8 +304,72 @@
     </div>
   </div>
 
+  <!-- =========================
+       저장 서버
+       ========================= -->
+  <div id="serverCalc" class="calc-container">
+    <h3 style="margin:0 0 16px">저장 서버</h3>
+
+    <!-- 저장 슬롯 만들기 -->
+    <fieldset>
+      <legend>저장 슬롯 만들기</legend>
+      <div class="row">
+        <label>슬롯 이름
+          <input id="newSlotName" type="text" placeholder="예: 1주차 저장 공간" style="width:200px">
+        </label>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <label><input type="radio" name="slotType" value="public" checked>공유 (누구나 접근 가능)</label>
+        <label><input type="radio" name="slotType" value="private">잠금 (비밀번호 필요)</label>
+      </div>
+      <div class="row" id="slotPasswordRow" style="margin-top:8px;display:none">
+        <label>비밀번호
+          <input id="slotPassword" type="password" placeholder="비밀번호 입력" style="width:150px">
+        </label>
+      </div>
+      <div class="toolbar">
+        <button class="btn primary" onclick="createSlot()">슬롯 만들기</button>
+      </div>
+    </fieldset>
+
+    <!-- 저장된 슬롯 목록 -->
+    <fieldset>
+      <legend>저장된 슬롯 목록</legend>
+      <div id="slotList" style="min-height:200px">
+        <p style="color:#999;text-align:center;padding:40px 0">슬롯을 생성하거나 불러오는 중...</p>
+      </div>
+    </fieldset>
+  </div>
+
   <!-- html2canvas -->
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+  <!-- Firebase -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+    import { getDatabase, ref, set, get, push, onValue } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyB90WAYMh6G8aWS3gzKw2wmT9X3O0zGoGw",
+      authDomain: "dragon-calculator-8733b.firebaseapp.com",
+      databaseURL: "https://dragon-calculator-8733b-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "dragon-calculator-8733b",
+      storageBucket: "dragon-calculator-8733b.firebasestorage.app",
+      messagingSenderId: "707550978178",
+      appId: "1:707550978178:web:09607e55f05337c154949b"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const database = getDatabase(app);
+
+    // 전역으로 노출
+    window.firebaseDB = database;
+    window.firebaseRef = ref;
+    window.firebaseSet = set;
+    window.firebaseGet = get;
+    window.firebasePush = push;
+    window.firebaseOnValue = onValue;
+  </script>
 
   <script>
   /* =========================
@@ -990,40 +1056,339 @@ function renderOneResult(idx){
      ========================= */
   const autoDiv=document.getElementById('autoCalc');
   const manualDiv=document.getElementById('manualCalc');
+  const serverDiv=document.getElementById('serverCalc');
   const btnAuto=document.getElementById('btnAuto');
   const btnManual=document.getElementById('btnManual');
+  const btnServer=document.getElementById('btnServer');
 
   // 각 모드의 독립적인 스크롤 위치 저장
   let autoScrollPos = 0;
   let manualScrollPos = 0;
+  let serverScrollPos = 0;
 
   function switchMode(mode){
     if(mode==='auto'){
-      // 수동 모드 스크롤 위치 저장
       manualScrollPos = window.scrollY;
+      serverScrollPos = window.scrollY;
 
       autoDiv.classList.add('active');
       manualDiv.classList.remove('active');
+      serverDiv.classList.remove('active');
       btnAuto.classList.add('primary');
       btnManual.classList.remove('primary');
+      btnServer.classList.remove('primary');
 
-      // 자동 모드의 이전 스크롤 위치로 복원
       window.scrollTo(0, autoScrollPos);
-    }else{
-      // 자동 모드 스크롤 위치 저장
+    }else if(mode==='manual'){
       autoScrollPos = window.scrollY;
+      serverScrollPos = window.scrollY;
 
       manualDiv.classList.add('active');
       autoDiv.classList.remove('active');
+      serverDiv.classList.remove('active');
       btnManual.classList.add('primary');
       btnAuto.classList.remove('primary');
+      btnServer.classList.remove('primary');
 
-      // 수동 모드의 이전 스크롤 위치로 복원
       window.scrollTo(0, manualScrollPos);
+    }else if(mode==='server'){
+      autoScrollPos = window.scrollY;
+      manualScrollPos = window.scrollY;
+
+      serverDiv.classList.add('active');
+      autoDiv.classList.remove('active');
+      manualDiv.classList.remove('active');
+      btnServer.classList.add('primary');
+      btnAuto.classList.remove('primary');
+      btnManual.classList.remove('primary');
+
+      window.scrollTo(0, serverScrollPos);
+      loadSlotList(); // 슬롯 목록 로드
     }
   }
   btnAuto.onclick=()=>switchMode('auto');
   btnManual.onclick=()=>switchMode('manual');
+  btnServer.onclick=()=>switchMode('server');
+
+  /* =========================
+     저장 서버 기능
+     ========================= */
+  // 잠금/공유 선택 시 비밀번호 입력란 표시
+  document.querySelectorAll('input[name="slotType"]').forEach(radio => {
+    radio.addEventListener('change', () => {
+      const isPrivate = document.querySelector('input[name="slotType"]:checked').value === 'private';
+      document.getElementById('slotPasswordRow').style.display = isPrivate ? 'flex' : 'none';
+    });
+  });
+
+  // 간단한 비밀번호 해싱 (SHA-256)
+  async function hashPassword(password) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(password);
+    const hash = await crypto.subtle.digest('SHA-256', data);
+    return Array.from(new Uint8Array(hash))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+  }
+
+  // 슬롯 만들기
+  async function createSlot() {
+    const name = document.getElementById('newSlotName').value.trim();
+    if (!name) {
+      alert('슬롯 이름을 입력해주세요.');
+      return;
+    }
+
+    const type = document.querySelector('input[name="slotType"]:checked').value;
+    const isPrivate = type === 'private';
+
+    let passwordHash = null;
+    if (isPrivate) {
+      const password = document.getElementById('slotPassword').value;
+      if (!password) {
+        alert('비밀번호를 입력해주세요.');
+        return;
+      }
+      passwordHash = await hashPassword(password);
+    }
+
+    const slotData = {
+      name: name,
+      type: type,
+      passwordHash: passwordHash,
+      createdAt: Date.now(),
+      data: []
+    };
+
+    try {
+      const newSlotRef = window.firebasePush(window.firebaseRef(window.firebaseDB, 'slots'));
+      await window.firebaseSet(newSlotRef, slotData);
+
+      alert(`슬롯 "${name}"이(가) 생성되었습니다!`);
+      document.getElementById('newSlotName').value = '';
+      document.getElementById('slotPassword').value = '';
+      loadSlotList();
+    } catch (error) {
+      console.error('슬롯 생성 오류:', error);
+      alert('슬롯 생성 중 오류가 발생했습니다.');
+    }
+  }
+
+  // 슬롯 목록 로드
+  function loadSlotList() {
+    const slotsRef = window.firebaseRef(window.firebaseDB, 'slots');
+    window.firebaseOnValue(slotsRef, (snapshot) => {
+      const slotListEl = document.getElementById('slotList');
+      slotListEl.innerHTML = '';
+
+      if (!snapshot.exists()) {
+        slotListEl.innerHTML = '<p style="color:#999;text-align:center;padding:40px 0">저장된 슬롯이 없습니다.</p>';
+        return;
+      }
+
+      const slots = snapshot.val();
+      Object.keys(slots).forEach(slotId => {
+        const slot = slots[slotId];
+        const slotBox = document.createElement('div');
+        slotBox.style.cssText = 'border:1px solid var(--line);background:#fff;border-radius:8px;padding:12px;margin-bottom:10px';
+
+        const lockIcon = slot.type === 'private' ? '🔒' : '🔓';
+        const dataCount = slot.data ? slot.data.length : 0;
+        const createdDate = new Date(slot.createdAt).toLocaleString('ko-KR');
+
+        slotBox.innerHTML = `
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <strong style="font-size:16px">${lockIcon} ${slot.name}</strong>
+              <div style="color:#666;font-size:12px;margin-top:4px">
+                생성일: ${createdDate} | 저장된 데이터: ${dataCount}개
+              </div>
+            </div>
+            <button class="btn" onclick="viewSlot('${slotId}')">열람하기</button>
+          </div>
+        `;
+        slotListEl.appendChild(slotBox);
+      });
+    });
+  }
+
+  // 슬롯 열람
+  async function viewSlot(slotId) {
+    const slotRef = window.firebaseRef(window.firebaseDB, `slots/${slotId}`);
+    const snapshot = await window.firebaseGet(slotRef);
+
+    if (!snapshot.exists()) {
+      alert('슬롯을 찾을 수 없습니다.');
+      return;
+    }
+
+    const slot = snapshot.val();
+
+    // 잠금된 슬롯은 비밀번호 확인
+    if (slot.type === 'private') {
+      const password = prompt('비밀번호를 입력하세요:');
+      if (!password) return;
+
+      const inputHash = await hashPassword(password);
+      if (inputHash !== slot.passwordHash) {
+        alert('비밀번호가 올바르지 않습니다.');
+        return;
+      }
+    }
+
+    // 데이터 표시
+    const dataList = slot.data || [];
+    if (dataList.length === 0) {
+      alert('저장된 데이터가 없습니다.');
+      return;
+    }
+
+    let message = `=== ${slot.name} ===\n\n`;
+    dataList.forEach((entry, index) => {
+      message += `[${index + 1}] ${entry.userName} (${new Date(entry.timestamp).toLocaleString('ko-KR')})\n`;
+      message += `드래곤1: ${entry.dragons[0].name || '이름없음'}\n`;
+      message += `드래곤2: ${entry.dragons[1].name || '이름없음'}\n`;
+      message += `드래곤3: ${entry.dragons[2].name || '이름없음'}\n\n`;
+    });
+
+    alert(message);
+  }
+
+  // 페이지 로드 시 슬롯 목록 자동 로드 (Firebase 초기화 후)
+  setTimeout(() => {
+    if (window.firebaseDB) {
+      loadSlotList();
+    }
+  }, 1000);
+
+  // 수동계산기 데이터를 서버에 저장
+  async function saveToServer() {
+    // 1. 유저 이름 입력
+    const userName = prompt('유저 이름을 입력하세요:');
+    if (!userName || !userName.trim()) {
+      alert('유저 이름을 입력해야 합니다.');
+      return;
+    }
+
+    // 2. 슬롯 목록 가져오기
+    const slotsRef = window.firebaseRef(window.firebaseDB, 'slots');
+    const snapshot = await window.firebaseGet(slotsRef);
+
+    if (!snapshot.exists()) {
+      alert('저장 가능한 슬롯이 없습니다. 저장 서버 탭에서 슬롯을 먼저 생성해주세요.');
+      return;
+    }
+
+    const slots = snapshot.val();
+    const slotList = Object.keys(slots).map(id => ({id, ...slots[id]}));
+
+    // 3. 슬롯 선택 UI 생성
+    let slotOptions = '저장할 슬롯을 선택하세요:\n\n';
+    slotList.forEach((slot, index) => {
+      const lockIcon = slot.type === 'private' ? '🔒' : '🔓';
+      slotOptions += `${index + 1}. ${lockIcon} ${slot.name}\n`;
+    });
+    slotOptions += '\n번호를 입력하세요:';
+
+    const slotNum = prompt(slotOptions);
+    if (!slotNum) return;
+
+    const selectedIndex = parseInt(slotNum) - 1;
+    if (selectedIndex < 0 || selectedIndex >= slotList.length) {
+      alert('잘못된 선택입니다.');
+      return;
+    }
+
+    const selectedSlot = slotList[selectedIndex];
+
+    // 4. 잠금 슬롯이면 비밀번호 확인
+    if (selectedSlot.type === 'private') {
+      const password = prompt('비밀번호를 입력하세요:');
+      if (!password) return;
+
+      const inputHash = await hashPassword(password);
+      if (inputHash !== selectedSlot.passwordHash) {
+        alert('비밀번호가 올바르지 않습니다.');
+        return;
+      }
+    }
+
+    // 5. 드래곤 3마리 데이터 수집
+    const dragons = [];
+    for (let i = 1; i <= 3; i++) {
+      const dragonData = {
+        name: document.getElementById(`d${i}_name`)?.value || '',
+        level: document.getElementById(`d${i}_m_level`)?.value || '9.0',
+        type: document.getElementById(`d${i}_m_type`)?.value || '공격형',
+        gems: [],
+        accessory: {
+          hp: num(`d${i}_m_acc_hp`),
+          atk: num(`d${i}_m_acc_atk`),
+          df: num(`d${i}_m_acc_df`)
+        },
+        enchant: {
+          hp: num(`d${i}_m_ench_hp`),
+          atk: num(`d${i}_m_ench_atk`),
+          df: num(`d${i}_m_ench_df`)
+        },
+        pendant: {
+          hp: num(`d${i}_m_pend_hp`),
+          atk: num(`d${i}_m_pend_atk`),
+          df: num(`d${i}_m_pend_df`)
+        },
+        spirit: {
+          flatHp: num(`d${i}_sf_hp`),
+          flatAtk: num(`d${i}_sf_atk`),
+          flatDf: num(`d${i}_sf_df`),
+          pctHp: num(`d${i}_sp_hp`),
+          pctAtk: num(`d${i}_sp_atk`),
+          pctDf: num(`d${i}_sp_df`),
+          extraHp: num(`d${i}_se_hp`),
+          extraAtk: num(`d${i}_se_atk`),
+          extraDf: num(`d${i}_se_df`)
+        },
+        buff: {
+          hp: num(`d${i}_bf_hp`),
+          atk: num(`d${i}_bf_atk`),
+          df: num(`d${i}_bf_df`)
+        },
+        debuff: {
+          hp: num(`d${i}_db_hp`),
+          atk: num(`d${i}_db_atk`),
+          df: num(`d${i}_db_df`)
+        }
+      };
+
+      // 젬 데이터 수집
+      for (let j = 1; j <= 5; j++) {
+        const type = document.getElementById(`d${i}_slot_type_${j}`)?.value || '';
+        const value = document.getElementById(`d${i}_slot_val_${j}`)?.value || '0';
+        dragonData.gems.push({type, value: parseInt(value)});
+      }
+
+      dragons.push(dragonData);
+    }
+
+    // 6. Firebase에 저장
+    const saveData = {
+      userName: userName.trim(),
+      timestamp: Date.now(),
+      dragons: dragons
+    };
+
+    try {
+      const currentData = selectedSlot.data || [];
+      currentData.push(saveData);
+
+      const slotRef = window.firebaseRef(window.firebaseDB, `slots/${selectedSlot.id}/data`);
+      await window.firebaseSet(slotRef, currentData);
+
+      alert(`"${selectedSlot.name}" 슬롯에 저장되었습니다!`);
+    } catch (error) {
+      console.error('저장 오류:', error);
+      alert('저장 중 오류가 발생했습니다.');
+    }
+  }
   </script>
 </body>
 </html>
