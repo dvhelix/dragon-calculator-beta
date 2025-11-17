@@ -136,11 +136,10 @@
     pre.result{font-size:11px;padding:10px;min-height:150px;overflow-x:auto;}
   }
 
-  /* 모바일에서 4컬럼 그리드 세로 정렬 */
+  /* 모바일에서 auto-fit 방식으로 변경 */
   @media (max-width: 768px) {
-    #viewSlotContent .grid-4col,
-    div[style*="grid-template-columns:repeat(4,1fr)"] {
-      grid-template-columns: 1fr !important;
+    #viewSlotContent div[style*="grid-template-columns:1fr 1fr 1fr 1fr"] {
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) !important;
     }
   }
 </style>
@@ -157,9 +156,6 @@
     <div class="hint small">모든 입력은 <b>HP / ATK / DEF</b> 순서입니다. · made by 헬릭스</div>
   </div>
 
-  <!-- =========================
-       자동 계산기
-       ========================= -->
   <div id="autoCalc" class="calc-container active">
     <!-- 등급/타입 -->
     <fieldset>
@@ -290,9 +286,6 @@
     <pre id="autoResult" class="result"></pre>
   </div>
 
-  <!-- =========================
-       수동 계산기
-       ========================= -->
   <div id="manualCalc" class="calc-container">
     <h3 style="margin:0 0 16px">수동 계산기 (3마리 비교)</h3>
 
@@ -312,9 +305,6 @@
     </div>
   </div>
 
-  <!-- =========================
-       저장 서버
-       ========================= -->
   <div id="serverCalc" class="calc-container">
     <h3 style="margin:0 0 16px">저장 서버</h3>
 
@@ -323,7 +313,7 @@
       <legend>저장 슬롯 만들기</legend>
       <div class="row">
         <label>슬롯 이름
-          <input id="newSlotName" type="text" placeholder="예: 1주차 저장 공간" style="width:200px">
+          <input id="newSlotName" type="text" placeholder="" style="width:200px">
         </label>
       </div>
       <div class="row" style="margin-top:8px">
@@ -380,9 +370,6 @@
   </script>
 
   <script>
-  /* =========================
-     공통 유틸 / 데이터
-     ========================= */
   class Stats{constructor(hp,atk,df){this.hp=hp;this.atk=atk;this.df=df;}}
   const dragon={
    "7.0":{공격형:new Stats(876,285,161),방어형:new Stats(788,185,283),체력형:new Stats(1252,176,176),공방형:new Stats(720,242,243),체공형:new Stats(1080,262,133),체방형:new Stats(1080,133,262)},
@@ -459,9 +446,6 @@
     alert(`드래곤 ${dragonIdx}에 정령/버프/디버프 값이 적용되었습니다.`);
   }
 
-  /* =========================
-     자동 계산기 - 장신구 데이터 및 렌더링
-     ========================= */
   const ACC_TABLE = [
     ["바뿔(공/방)",19,0,10,9],["바뿔(체/방)",19,10,0,9],["바뿔(공/체)",19,9,10,0],
     ["불뿔(공/체)",19,6,13,0],["불뿔(공/방)",19,0,13,6],
@@ -506,9 +490,6 @@
     filtered.forEach(o => document.getElementById(o.id).checked = !allChecked);
   }
 
-  /* =========================
-     자동 계산기 - 펜던트 UI 전환
-     ========================= */
   document.querySelectorAll('input[name="pendant_ver"]').forEach(r => {
     r.addEventListener('change', () => {
       const ver = document.querySelector('input[name="pendant_ver"]:checked').value;
@@ -521,9 +502,6 @@
     document.querySelector('input[name="pendant_ver"]:checked')?.dispatchEvent(new Event('change'));
   });
 
-  /* =========================
-     자동 계산기 - 펜던트 조합 생성
-     ========================= */
   function genPend(total, mode, selectedStats = ["HP","ATK","DEF"]) {
     const MAX = 6;
     const combos = [];
@@ -579,9 +557,6 @@
     return [[[0,0,0]]];
   }
 
-  /* =========================
-     자동 계산기 - 메인 계산 함수
-     ========================= */
   function calcAuto(){
     const resultBox = document.getElementById("autoResult");
     resultBox.textContent = "";
@@ -759,9 +734,6 @@
     URL.revokeObjectURL(url);
   }
 
-  /* =========================
-     수동 계산기 - 초기화 및 데이터
-     ========================= */
   const gemOptions = {
     HP: [160, 156, 152, 148],
     ATK: [40, 39, 38, 37],
@@ -1059,9 +1031,6 @@ function renderOneResult(idx){
     });
   }
 
-  /* =========================
-     탭 전환
-     ========================= */
   const autoDiv=document.getElementById('autoCalc');
   const manualDiv=document.getElementById('manualCalc');
   const serverDiv=document.getElementById('serverCalc');
@@ -1118,9 +1087,6 @@ function renderOneResult(idx){
   btnManual.onclick=()=>switchMode('manual');
   btnServer.onclick=()=>switchMode('server');
 
-  /* =========================
-     저장 서버 기능
-     ========================= */
   // 잠금/공유 선택 시 비밀번호 입력란 표시
   document.querySelectorAll('input[name="slotType"]').forEach(radio => {
     radio.addEventListener('change', () => {
@@ -1200,7 +1166,7 @@ function renderOneResult(idx){
         const slotBox = document.createElement('div');
         slotBox.style.cssText = 'border:1px solid var(--line);background:#fff;border-radius:8px;padding:12px;margin-bottom:10px';
 
-        const lockIcon = slot.type === 'private' ? '🔒' : '🔓';
+        const lockIcon = slot.type === 'private' ? '🔒 ' : '';
         const dataCount = slot.data ? slot.data.length : 0;
         const createdDate = new Date(slot.createdAt).toLocaleString('ko-KR');
 
@@ -1292,6 +1258,37 @@ function renderOneResult(idx){
     setTimeout(() => window.renderDetailView(dataList), 0);
   }
 
+  // 드래곤 스탯 계산 (중복 제거용 헬퍼 함수)
+  window.calculateDragonStats = function(dragon) {
+    let gemTotal = {hp: 0, atk: 0, df: 0};
+    dragon.gems.forEach(gem => {
+      if (gem.type === 'HP') gemTotal.hp += gem.value;
+      if (gem.type === 'ATK') gemTotal.atk += gem.value;
+      if (gem.type === 'DEF') gemTotal.df += gem.value;
+    });
+
+    const pot = new Stats(24, 6, 6);
+    const col = new Stats(240, 60, 60);
+    const gem = new Stats(gemTotal.hp, gemTotal.atk, gemTotal.df);
+    const acc = new Stats(
+      (dragon.accessory.hp + dragon.enchant.hp) / 100,
+      (dragon.accessory.atk + dragon.enchant.atk) / 100,
+      (dragon.accessory.df + dragon.enchant.df) / 100
+    );
+    const pend = new Stats(dragon.pendant.hp / 100, dragon.pendant.atk / 100, dragon.pendant.df / 100);
+    const spf = new Stats(dragon.spirit.flatHp, dragon.spirit.flatAtk, dragon.spirit.flatDf);
+    const spp = new Stats(dragon.spirit.pctHp / 100, dragon.spirit.pctAtk / 100, dragon.spirit.pctDf / 100);
+    const spe = new Stats(dragon.spirit.extraHp, dragon.spirit.extraAtk, dragon.spirit.extraDf);
+    const bf = new Stats(dragon.buff.hp / 100, dragon.buff.atk / 100, dragon.buff.df / 100);
+    const db = new Stats(dragon.debuff.hp / 100, dragon.debuff.atk / 100, dragon.debuff.df / 100);
+
+    const base = window.dragon && window.dragon[dragon.level] && window.dragon[dragon.level][dragon.type]
+      ? window.dragon[dragon.level][dragon.type]
+      : new Stats(1160, 282, 133);
+
+    return calcPredict(base, gem, pot, acc, pend, spf, spp, spe, col, bf, db);
+  }
+
   // 열람 모달 닫기
   window.closeViewSlotModal = function() {
     const modal = document.getElementById('viewSlotModal');
@@ -1350,38 +1347,9 @@ function renderOneResult(idx){
     `;
 
     dataList.forEach((entry, index) => {
-      const bValues = [];
-
-      // 각 드래곤의 B-Value 계산
-      entry.dragons.forEach(dragon => {
-        let gemTotal = {hp: 0, atk: 0, df: 0};
-        dragon.gems.forEach(gem => {
-          if (gem.type === 'HP') gemTotal.hp += gem.value;
-          if (gem.type === 'ATK') gemTotal.atk += gem.value;
-          if (gem.type === 'DEF') gemTotal.df += gem.value;
-        });
-
-        const pot = new Stats(24, 6, 6);
-        const col = new Stats(240, 60, 60);
-        const gem = new Stats(gemTotal.hp, gemTotal.atk, gemTotal.df);
-        const acc = new Stats(
-          (dragon.accessory.hp + dragon.enchant.hp) / 100,
-          (dragon.accessory.atk + dragon.enchant.atk) / 100,
-          (dragon.accessory.df + dragon.enchant.df) / 100
-        );
-        const pend = new Stats(dragon.pendant.hp / 100, dragon.pendant.atk / 100, dragon.pendant.df / 100);
-        const spf = new Stats(dragon.spirit.flatHp, dragon.spirit.flatAtk, dragon.spirit.flatDf);
-        const spp = new Stats(dragon.spirit.pctHp / 100, dragon.spirit.pctAtk / 100, dragon.spirit.pctDf / 100);
-        const spe = new Stats(dragon.spirit.extraHp, dragon.spirit.extraAtk, dragon.spirit.extraDf);
-        const bf = new Stats(dragon.buff.hp / 100, dragon.buff.atk / 100, dragon.buff.df / 100);
-        const db = new Stats(dragon.debuff.hp / 100, dragon.debuff.atk / 100, dragon.debuff.df / 100);
-
-        const base = window.dragon && window.dragon[dragon.level] && window.dragon[dragon.level][dragon.type]
-          ? window.dragon[dragon.level][dragon.type]
-          : new Stats(1160, 282, 133);
-
-        const [finalStats, eValue, bValue] = calcPredict(base, gem, pot, acc, pend, spf, spp, spe, col, bf, db);
-        bValues.push(bValue / 1e6);
+      const bValues = entry.dragons.map(dragon => {
+        const [, , bValue] = window.calculateDragonStats(dragon);
+        return bValue / 1e6;
       });
 
       const total = bValues.reduce((sum, val) => sum + val, 0);
@@ -1453,38 +1421,11 @@ function renderOneResult(idx){
 
       entry.dragons.forEach((dragon, dragonIdx) => {
         const dragonName = dragon.name || `드래곤 ${dragonIdx + 1}`;
-
-        let gemTotal = {hp: 0, atk: 0, df: 0};
-        dragon.gems.forEach(gem => {
-          if (gem.type === 'HP') gemTotal.hp += gem.value;
-          if (gem.type === 'ATK') gemTotal.atk += gem.value;
-          if (gem.type === 'DEF') gemTotal.df += gem.value;
-        });
-
-        const pot = new Stats(24, 6, 6);
-        const col = new Stats(240, 60, 60);
-        const gem = new Stats(gemTotal.hp, gemTotal.atk, gemTotal.df);
-        const acc = new Stats(
-          (dragon.accessory.hp + dragon.enchant.hp) / 100,
-          (dragon.accessory.atk + dragon.enchant.atk) / 100,
-          (dragon.accessory.df + dragon.enchant.df) / 100
-        );
-        const pend = new Stats(dragon.pendant.hp / 100, dragon.pendant.atk / 100, dragon.pendant.df / 100);
-        const spf = new Stats(dragon.spirit.flatHp, dragon.spirit.flatAtk, dragon.spirit.flatDf);
-        const spp = new Stats(dragon.spirit.pctHp / 100, dragon.spirit.pctAtk / 100, dragon.spirit.pctDf / 100);
-        const spe = new Stats(dragon.spirit.extraHp, dragon.spirit.extraAtk, dragon.spirit.extraDf);
-        const bf = new Stats(dragon.buff.hp / 100, dragon.buff.atk / 100, dragon.buff.df / 100);
-        const db = new Stats(dragon.debuff.hp / 100, dragon.debuff.atk / 100, dragon.debuff.df / 100);
-
-        const base = window.dragon && window.dragon[dragon.level] && window.dragon[dragon.level][dragon.type]
-          ? window.dragon[dragon.level][dragon.type]
-          : new Stats(1160, 282, 133);
-
-        const [finalStats, eValue, bValue] = calcPredict(base, gem, pot, acc, pend, spf, spp, spe, col, bf, db);
+        const [finalStats, eValue, bValue] = window.calculateDragonStats(dragon);
 
         entryHtml += `
           <div style="border:1px solid #ccc;border-radius:6px;padding:12px;margin-bottom:10px;background:#fff;">
-            <h4 style="margin:0 0 10px;color:#2d6cdf;border-bottom:1px solid #eee;padding-bottom:6px;">🐉 ${dragonName}</h4>
+            <h4 style="margin:0 0 10px;color:#2d6cdf;border-bottom:1px solid #eee;padding-bottom:6px;">${dragonName}</h4>
 
             <div style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);color:#fff;padding:12px;border-radius:6px;margin-bottom:12px;">
               <div style="font-size:14px;font-weight:700;margin-bottom:8px;">📊 최종 계산 결과</div>
@@ -1558,39 +1499,10 @@ function renderOneResult(idx){
 
     // CSV 데이터
     dataList.forEach(entry => {
-      const bValues = [];
-
-      entry.dragons.forEach(dragon => {
-        let gemTotal = {hp: 0, atk: 0, df: 0};
-        dragon.gems.forEach(gem => {
-          if (gem.type === 'HP') gemTotal.hp += gem.value;
-          if (gem.type === 'ATK') gemTotal.atk += gem.value;
-          if (gem.type === 'DEF') gemTotal.df += gem.value;
-        });
-
-        const pot = new Stats(24, 6, 6);
-        const col = new Stats(240, 60, 60);
-        const gem = new Stats(gemTotal.hp, gemTotal.atk, gemTotal.df);
-        const acc = new Stats(
-          (dragon.accessory.hp + dragon.enchant.hp) / 100,
-          (dragon.accessory.atk + dragon.enchant.atk) / 100,
-          (dragon.accessory.df + dragon.enchant.df) / 100
-        );
-        const pend = new Stats(dragon.pendant.hp / 100, dragon.pendant.atk / 100, dragon.pendant.df / 100);
-        const spf = new Stats(dragon.spirit.flatHp, dragon.spirit.flatAtk, dragon.spirit.flatDf);
-        const spp = new Stats(dragon.spirit.pctHp / 100, dragon.spirit.pctAtk / 100, dragon.spirit.pctDf / 100);
-        const spe = new Stats(dragon.spirit.extraHp, dragon.spirit.extraAtk, dragon.spirit.extraDf);
-        const bf = new Stats(dragon.buff.hp / 100, dragon.buff.atk / 100, dragon.buff.df / 100);
-        const db = new Stats(dragon.debuff.hp / 100, dragon.debuff.atk / 100, dragon.debuff.df / 100);
-
-        const base = window.dragon && window.dragon[dragon.level] && window.dragon[dragon.level][dragon.type]
-          ? window.dragon[dragon.level][dragon.type]
-          : new Stats(1160, 282, 133);
-
-        const [finalStats, eValue, bValue] = calcPredict(base, gem, pot, acc, pend, spf, spp, spe, col, bf, db);
-        bValues.push(bValue / 1e6);
+      const bValues = entry.dragons.map(dragon => {
+        const [, , bValue] = window.calculateDragonStats(dragon);
+        return bValue / 1e6;
       });
-
       const total = bValues.reduce((sum, val) => sum + val, 0);
       csv += `${entry.userName},${bValues[0].toFixed(3)},${bValues[1].toFixed(3)},${bValues[2].toFixed(3)},${total.toFixed(3)}\n`;
     });
