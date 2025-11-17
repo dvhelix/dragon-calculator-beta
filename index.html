@@ -1197,14 +1197,18 @@ function renderOneResult(idx){
         const createdDate = new Date(slot.createdAt).toLocaleString('ko-KR');
 
         slotBox.innerHTML = `
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <div>
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+            <div style="flex:1;min-width:200px;">
               <strong style="font-size:16px">${lockIcon} ${slot.name}</strong>
               <div style="color:#666;font-size:12px;margin-top:4px">
                 생성일: ${createdDate} | 저장된 데이터: ${dataCount}개
               </div>
             </div>
-            <button class="btn" onclick="viewSlot('${slotId}')">열람하기</button>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <button class="btn" onclick="viewSlot('${slotId}')" style="background:#4CAF50;color:#fff;border-color:#4CAF50;">열람하기</button>
+              <button class="btn" onclick="clearSlotData('${slotId}')" style="background:#ff9800;color:#fff;border-color:#ff9800;">데이터 비우기</button>
+              <button class="btn" onclick="deleteSlot('${slotId}')" style="background:#f44336;color:#fff;border-color:#f44336;">슬롯 삭제</button>
+            </div>
           </div>
         `;
         slotListEl.appendChild(slotBox);
@@ -1236,23 +1240,262 @@ function renderOneResult(idx){
       }
     }
 
-    // 데이터 표시
+    // 데이터 표시 - 모달로 개선
     const dataList = slot.data || [];
     if (dataList.length === 0) {
       alert('저장된 데이터가 없습니다.');
       return;
     }
 
-    let message = `=== ${slot.name} ===\n\n`;
-    dataList.forEach((entry, index) => {
-      message += `[${index + 1}] ${entry.userName} (${new Date(entry.timestamp).toLocaleString('ko-KR')})\n`;
-      message += `드래곤1: ${entry.dragons[0].name || '이름없음'}\n`;
-      message += `드래곤2: ${entry.dragons[1].name || '이름없음'}\n`;
-      message += `드래곤3: ${entry.dragons[2].name || '이름없음'}\n\n`;
-    });
+    // 모달 생성
+    let modalContent = `
+      <div id="viewSlotModal" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto;">
+        <div style="background:#fff;border-radius:12px;max-width:900px;width:100%;max-height:90vh;overflow-y:auto;padding:24px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;border-bottom:2px solid #ddd;padding-bottom:12px;">
+            <h3 style="margin:0;color:#111;">📁 ${slot.name}</h3>
+            <button class="btn" onclick="closeViewSlotModal()" style="padding:6px 12px;">닫기</button>
+          </div>
+          <div id="viewSlotContent"></div>
+        </div>
+      </div>
+    `;
 
-    alert(message);
+    document.body.insertAdjacentHTML('beforeend', modalContent);
+
+    // 각 저장 데이터 렌더링
+    const contentDiv = document.getElementById('viewSlotContent');
+    dataList.forEach((entry, index) => {
+      const entryDiv = document.createElement('div');
+      entryDiv.style.cssText = 'border:1px solid #ddd;border-radius:8px;padding:16px;margin-bottom:16px;background:#f9f9f9;';
+
+      let entryHtml = `
+        <div style="background:#2d6cdf;color:#fff;padding:8px 12px;border-radius:6px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;">
+          <strong style="font-size:16px;">[${index + 1}] ${entry.userName}</strong>
+          <span style="font-size:12px;opacity:0.9;">${new Date(entry.timestamp).toLocaleString('ko-KR')}</span>
+        </div>
+      `;
+
+      // 드래곤 3마리 정보
+      entry.dragons.forEach((dragon, dragonIdx) => {
+        const dragonName = dragon.name || `드래곤 ${dragonIdx + 1}`;
+
+        // E-Value, B-Value 계산
+        // 젬 합산
+        let gemTotal = {hp: 0, atk: 0, df: 0};
+        dragon.gems.forEach(gem => {
+          if (gem.type === 'HP') gemTotal.hp += gem.value;
+          if (gem.type === 'ATK') gemTotal.atk += gem.value;
+          if (gem.type === 'DEF') gemTotal.df += gem.value;
+        });
+
+        // 계산 (기존 calcPredict 로직 재사용)
+        const pot = new Stats(24, 6, 6);
+        const col = new Stats(240, 60, 60);
+        const gem = new Stats(gemTotal.hp, gemTotal.atk, gemTotal.df);
+        const acc = new Stats(
+          (dragon.accessory.hp + dragon.enchant.hp) / 100,
+          (dragon.accessory.atk + dragon.enchant.atk) / 100,
+          (dragon.accessory.df + dragon.enchant.df) / 100
+        );
+        const pend = new Stats(dragon.pendant.hp / 100, dragon.pendant.atk / 100, dragon.pendant.df / 100);
+        const spf = new Stats(dragon.spirit.flatHp, dragon.spirit.flatAtk, dragon.spirit.flatDf);
+        const spp = new Stats(dragon.spirit.pctHp / 100, dragon.spirit.pctAtk / 100, dragon.spirit.pctDf / 100);
+        const spe = new Stats(dragon.spirit.extraHp, dragon.spirit.extraAtk, dragon.spirit.extraDf);
+        const bf = new Stats(dragon.buff.hp / 100, dragon.buff.atk / 100, dragon.buff.df / 100);
+        const db = new Stats(dragon.debuff.hp / 100, dragon.debuff.atk / 100, dragon.debuff.df / 100);
+
+        // 드래곤 기본 스탯 가져오기 (전역 dragon 객체 사용)
+        const base = window.dragon && window.dragon[dragon.level] && window.dragon[dragon.level][dragon.type]
+          ? window.dragon[dragon.level][dragon.type]
+          : new Stats(1160, 282, 133); // 기본값: 9.0 체공형
+
+        const [finalStats, eValue, bValue] = calcPredict(base, gem, pot, acc, pend, spf, spp, spe, col, bf, db);
+
+        entryHtml += `
+          <div style="border:1px solid #ccc;border-radius:6px;padding:12px;margin-bottom:10px;background:#fff;">
+            <h4 style="margin:0 0 10px;color:#2d6cdf;border-bottom:1px solid #eee;padding-bottom:6px;">🐉 ${dragonName}</h4>
+
+            <!-- 최종 스탯 & 지표 (상단 강조) -->
+            <div style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);color:#fff;padding:12px;border-radius:6px;margin-bottom:12px;">
+              <div style="font-size:14px;font-weight:700;margin-bottom:8px;">📊 최종 계산 결과</div>
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;font-size:13px;">
+                <div><strong>HP:</strong> ${finalStats.hp.toLocaleString()}</div>
+                <div><strong>ATK:</strong> ${finalStats.atk.toLocaleString()}</div>
+                <div><strong>DEF:</strong> ${finalStats.df.toLocaleString()}</div>
+              </div>
+              <div style="border-top:1px solid rgba(255,255,255,0.3);margin-top:8px;padding-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                <div style="background:rgba(255,255,255,0.2);padding:6px;border-radius:4px;text-align:center;">
+                  <div style="font-size:11px;opacity:0.9;">E-Value (이벨)</div>
+                  <div style="font-size:18px;font-weight:900;">${eValue.toLocaleString()}</div>
+                </div>
+                <div style="background:rgba(255,255,255,0.2);padding:6px;border-radius:4px;text-align:center;">
+                  <div style="font-size:11px;opacity:0.9;">B-Value (비벨)</div>
+                  <div style="font-size:18px;font-weight:900;">${(bValue/1e6).toFixed(3)}M</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 입력 스탯 상세 -->
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;font-size:13px;">
+              <div>
+                <strong>등급/타입:</strong> ${dragon.level} / ${dragon.type}
+              </div>
+
+              <div>
+                <strong>젬 구성:</strong><br>
+                ${dragon.gems.map((gem, i) =>
+                  gem.type ? `젬${i+1}: ${gem.type} ${gem.value}` : `젬${i+1}: 없음`
+                ).join('<br>')}
+              </div>
+
+              <div>
+                <strong>장신구 (%):</strong><br>
+                HP ${dragon.accessory.hp}% / ATK ${dragon.accessory.atk}% / DEF ${dragon.accessory.df}%
+              </div>
+
+              <div>
+                <strong>인챈트 (%):</strong><br>
+                HP ${dragon.enchant.hp}% / ATK ${dragon.enchant.atk}% / DEF ${dragon.enchant.df}%
+              </div>
+
+              <div>
+                <strong>펜던트 (%):</strong><br>
+                HP ${dragon.pendant.hp}% / ATK ${dragon.pendant.atk}% / DEF ${dragon.pendant.df}%
+              </div>
+
+              <div>
+                <strong>정령 플옵:</strong><br>
+                HP ${dragon.spirit.flatHp} / ATK ${dragon.spirit.flatAtk} / DEF ${dragon.spirit.flatDf}
+              </div>
+
+              <div>
+                <strong>정령 퍼옵 (%):</strong><br>
+                HP ${dragon.spirit.pctHp}% / ATK ${dragon.spirit.pctAtk}% / DEF ${dragon.spirit.pctDf}%
+              </div>
+
+              <div>
+                <strong>정령 부가옵:</strong><br>
+                HP ${dragon.spirit.extraHp} / ATK ${dragon.spirit.extraAtk} / DEF ${dragon.spirit.extraDf}
+              </div>
+
+              <div>
+                <strong>버프 (%):</strong><br>
+                HP ${dragon.buff.hp}% / ATK ${dragon.buff.atk}% / DEF ${dragon.buff.df}%
+              </div>
+
+              <div>
+                <strong>디버프 (%):</strong><br>
+                HP ${dragon.debuff.hp}% / ATK ${dragon.debuff.atk}% / DEF ${dragon.debuff.df}%
+              </div>
+            </div>
+          </div>
+        `;
+      });
+
+      entryDiv.innerHTML = entryHtml;
+      contentDiv.appendChild(entryDiv);
+    });
   }
+
+  // 열람 모달 닫기
+  window.closeViewSlotModal = function() {
+    const modal = document.getElementById('viewSlotModal');
+    if (modal) modal.remove();
+  }
+
+  // 슬롯의 데이터만 비우기 (슬롯은 유지)
+  async function clearSlotData(slotId) {
+    const slotRef = window.firebaseRef(window.firebaseDB, `slots/${slotId}`);
+    const snapshot = await window.firebaseGet(slotRef);
+
+    if (!snapshot.exists()) {
+      alert('슬롯을 찾을 수 없습니다.');
+      return;
+    }
+
+    const slot = snapshot.val();
+
+    // 잠금된 슬롯은 비밀번호 확인
+    if (slot.type === 'private') {
+      const password = prompt('비밀번호를 입력하세요:');
+      if (!password) return;
+
+      const inputHash = await hashPassword(password);
+      if (inputHash !== slot.passwordHash) {
+        alert('비밀번호가 올바르지 않습니다.');
+        return;
+      }
+    }
+
+    const dataCount = slot.data ? slot.data.length : 0;
+    if (dataCount === 0) {
+      alert('비울 데이터가 없습니다.');
+      return;
+    }
+
+    if (!confirm(`"${slot.name}" 슬롯의 모든 데이터(${dataCount}개)를 삭제하시겠습니까?\n\n⚠️ 이 작업은 되돌릴 수 없습니다.`)) {
+      return;
+    }
+
+    try {
+      const dataRef = window.firebaseRef(window.firebaseDB, `slots/${slotId}/data`);
+      await window.firebaseSet(dataRef, []);
+      alert('슬롯 데이터가 모두 삭제되었습니다.');
+      loadSlotList();
+    } catch (error) {
+      console.error('데이터 삭제 오류:', error);
+      alert('데이터 삭제 중 오류가 발생했습니다.');
+    }
+  }
+
+  // 슬롯 완전 삭제
+  async function deleteSlot(slotId) {
+    const slotRef = window.firebaseRef(window.firebaseDB, `slots/${slotId}`);
+    const snapshot = await window.firebaseGet(slotRef);
+
+    if (!snapshot.exists()) {
+      alert('슬롯을 찾을 수 없습니다.');
+      return;
+    }
+
+    const slot = snapshot.val();
+
+    // 잠금된 슬롯은 비밀번호 확인
+    if (slot.type === 'private') {
+      const password = prompt('비밀번호를 입력하세요:');
+      if (!password) return;
+
+      const inputHash = await hashPassword(password);
+      if (inputHash !== slot.passwordHash) {
+        alert('비밀번호가 올바르지 않습니다.');
+        return;
+      }
+    }
+
+    if (!confirm(`"${slot.name}" 슬롯을 완전히 삭제하시겠습니까?\n\n⚠️ 슬롯과 모든 데이터가 영구적으로 삭제됩니다.\n⚠️ 이 작업은 되돌릴 수 없습니다.`)) {
+      return;
+    }
+
+    // 한 번 더 확인
+    const confirmText = prompt('정말로 삭제하시려면 "삭제"를 입력하세요:');
+    if (confirmText !== '삭제') {
+      alert('삭제가 취소되었습니다.');
+      return;
+    }
+
+    try {
+      await window.firebaseSet(slotRef, null);
+      alert(`"${slot.name}" 슬롯이 삭제되었습니다.`);
+      loadSlotList();
+    } catch (error) {
+      console.error('슬롯 삭제 오류:', error);
+      alert('슬롯 삭제 중 오류가 발생했습니다.');
+    }
+  }
+
+  // 전역 함수로 노출
+  window.clearSlotData = clearSlotData;
+  window.deleteSlot = deleteSlot;
 
   // 페이지 로드 시 슬롯 목록 자동 로드 (Firebase 초기화 후)
   setTimeout(() => {
