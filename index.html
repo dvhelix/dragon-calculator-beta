@@ -1630,7 +1630,7 @@ function renderOneResult(idx){
     // 3. 슬롯 목록 렌더링
     const slotSelectList = document.getElementById('slotSelectList');
     slotList.forEach((slot, index) => {
-      const lockIcon = slot.type === 'private' ? '🔒' : '🔓';
+      const lockIcon = slot.type === 'private' ? '🔒 ' : '';
       const dataCount = slot.data ? slot.data.length : 0;
 
       const slotItem = document.createElement('div');
