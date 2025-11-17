@@ -1255,32 +1255,97 @@ function renderOneResult(idx){
             <h3 style="margin:0;color:#111;">📁 ${slot.name}</h3>
             <button class="btn" onclick="closeViewSlotModal()" style="padding:6px 12px;">닫기</button>
           </div>
+
+          <!-- 상단 탭 및 검색/다운로드 -->
+          <div style="margin-bottom:16px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;">
+            <div style="display:flex;gap:8px;">
+              <button class="btn primary" id="btnDetailView" onclick="switchViewMode('detail')" style="padding:8px 16px;">상세 보기</button>
+              <button class="btn" id="btnSummaryView" onclick="switchViewMode('summary')" style="padding:8px 16px;">요약 통계</button>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <input id="userSearchInput" type="text" placeholder="유저 검색..." style="padding:6px 12px;border:1px solid #aaa;border-radius:4px;width:150px;">
+              <button class="btn" onclick="filterByUser()" style="padding:6px 12px;">🔍 검색</button>
+              <button class="btn" id="btnExportStats" onclick="exportToExcel()" style="padding:6px 12px;background:#28a745;color:#fff;border-color:#28a745;display:none;">📊 통계 저장</button>
+            </div>
+          </div>
+
           <div id="viewSlotContent"></div>
+          <div id="viewSlotSummary" style="display:none;"></div>
         </div>
       </div>
     `;
 
     document.body.insertAdjacentHTML('beforeend', modalContent);
 
-    // 각 저장 데이터 렌더링
+    // 데이터를 전역에 저장 (필터링 및 통계용)
+    window._currentSlotData = dataList;
+
+    // 상세 보기 초기 렌더링 (함수 정의 전이므로 setTimeout 사용)
+    setTimeout(() => window.renderDetailView(dataList), 0);
+  }
+
+  // 열람 모달 닫기
+  window.closeViewSlotModal = function() {
+    const modal = document.getElementById('viewSlotModal');
+    if (modal) modal.remove();
+    delete window._currentSlotData;
+    delete window._currentFilteredData;
+  }
+
+  // 뷰 모드 전환 (상세 보기 / 요약 통계)
+  window.switchViewMode = function(mode) {
+    const detailBtn = document.getElementById('btnDetailView');
+    const summaryBtn = document.getElementById('btnSummaryView');
+    const exportBtn = document.getElementById('btnExportStats');
     const contentDiv = document.getElementById('viewSlotContent');
+    const summaryDiv = document.getElementById('viewSlotSummary');
+
+    if (mode === 'detail') {
+      detailBtn.classList.add('primary');
+      summaryBtn.classList.remove('primary');
+      contentDiv.style.display = 'block';
+      summaryDiv.style.display = 'none';
+      exportBtn.style.display = 'none';
+    } else if (mode === 'summary') {
+      detailBtn.classList.remove('primary');
+      summaryBtn.classList.add('primary');
+      contentDiv.style.display = 'none';
+      summaryDiv.style.display = 'block';
+      exportBtn.style.display = 'inline-block';
+      renderSummaryStats();
+    }
+  }
+
+  // 요약 통계 렌더링
+  window.renderSummaryStats = function() {
+    const summaryDiv = document.getElementById('viewSlotSummary');
+    const dataList = window._currentFilteredData || window._currentSlotData || [];
+
+    if (dataList.length === 0) {
+      summaryDiv.innerHTML = '<p style="text-align:center;color:#999;padding:40px 0;">표시할 데이터가 없습니다.</p>';
+      return;
+    }
+
+    let summaryHtml = `
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,0.1);">
+          <thead>
+            <tr style="background:#2d6cdf;color:#fff;">
+              <th style="padding:12px;text-align:left;border:1px solid #ddd;">유저이름</th>
+              <th style="padding:12px;text-align:center;border:1px solid #ddd;">드래곤1 (비벨)</th>
+              <th style="padding:12px;text-align:center;border:1px solid #ddd;">드래곤2 (비벨)</th>
+              <th style="padding:12px;text-align:center;border:1px solid #ddd;">드래곤3 (비벨)</th>
+              <th style="padding:12px;text-align:center;border:1px solid #ddd;">합계</th>
+            </tr>
+          </thead>
+          <tbody>
+    `;
+
     dataList.forEach((entry, index) => {
-      const entryDiv = document.createElement('div');
-      entryDiv.style.cssText = 'border:1px solid #ddd;border-radius:8px;padding:16px;margin-bottom:16px;background:#f9f9f9;';
+      const bValues = [];
 
-      let entryHtml = `
-        <div style="background:#2d6cdf;color:#fff;padding:8px 12px;border-radius:6px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;">
-          <strong style="font-size:16px;">[${index + 1}] ${entry.userName}</strong>
-          <span style="font-size:12px;opacity:0.9;">${new Date(entry.timestamp).toLocaleString('ko-KR')}</span>
-        </div>
-      `;
-
-      // 드래곤 3마리 정보
-      entry.dragons.forEach((dragon, dragonIdx) => {
-        const dragonName = dragon.name || `드래곤 ${dragonIdx + 1}`;
-
-        // E-Value, B-Value 계산
-        // 젬 합산
+      // 각 드래곤의 B-Value 계산
+      entry.dragons.forEach(dragon => {
         let gemTotal = {hp: 0, atk: 0, df: 0};
         dragon.gems.forEach(gem => {
           if (gem.type === 'HP') gemTotal.hp += gem.value;
@@ -1288,7 +1353,6 @@ function renderOneResult(idx){
           if (gem.type === 'DEF') gemTotal.df += gem.value;
         });
 
-        // 계산 (기존 calcPredict 로직 재사용)
         const pot = new Stats(24, 6, 6);
         const col = new Stats(240, 60, 60);
         const gem = new Stats(gemTotal.hp, gemTotal.atk, gemTotal.df);
@@ -1304,10 +1368,109 @@ function renderOneResult(idx){
         const bf = new Stats(dragon.buff.hp / 100, dragon.buff.atk / 100, dragon.buff.df / 100);
         const db = new Stats(dragon.debuff.hp / 100, dragon.debuff.atk / 100, dragon.debuff.df / 100);
 
-        // 드래곤 기본 스탯 가져오기 (전역 dragon 객체 사용)
         const base = window.dragon && window.dragon[dragon.level] && window.dragon[dragon.level][dragon.type]
           ? window.dragon[dragon.level][dragon.type]
-          : new Stats(1160, 282, 133); // 기본값: 9.0 체공형
+          : new Stats(1160, 282, 133);
+
+        const [finalStats, eValue, bValue] = calcPredict(base, gem, pot, acc, pend, spf, spp, spe, col, bf, db);
+        bValues.push(bValue / 1e6);
+      });
+
+      const total = bValues.reduce((sum, val) => sum + val, 0);
+      const rowBg = index % 2 === 0 ? '#f9f9f9' : '#fff';
+
+      summaryHtml += `
+        <tr style="background:${rowBg};">
+          <td style="padding:10px;border:1px solid #ddd;font-weight:600;">${entry.userName}</td>
+          <td style="padding:10px;border:1px solid #ddd;text-align:center;">${bValues[0].toFixed(3)}</td>
+          <td style="padding:10px;border:1px solid #ddd;text-align:center;">${bValues[1].toFixed(3)}</td>
+          <td style="padding:10px;border:1px solid #ddd;text-align:center;">${bValues[2].toFixed(3)}</td>
+          <td style="padding:10px;border:1px solid #ddd;text-align:center;font-weight:700;background:#e3f2fd;">${total.toFixed(3)}</td>
+        </tr>
+      `;
+    });
+
+    summaryHtml += `
+          </tbody>
+        </table>
+      </div>
+    `;
+
+    summaryDiv.innerHTML = summaryHtml;
+  }
+
+  // 유저 검색 필터
+  window.filterByUser = function() {
+    const searchInput = document.getElementById('userSearchInput');
+    const searchTerm = searchInput.value.trim().toLowerCase();
+
+    if (!searchTerm) {
+      // 검색어가 없으면 전체 데이터 표시
+      window._currentFilteredData = null;
+      renderDetailView(window._currentSlotData);
+      renderSummaryStats();
+      return;
+    }
+
+    // 검색어로 필터링
+    const filtered = window._currentSlotData.filter(entry =>
+      entry.userName.toLowerCase().includes(searchTerm)
+    );
+
+    if (filtered.length === 0) {
+      alert(`"${searchInput.value}" 유저를 찾을 수 없습니다.`);
+      return;
+    }
+
+    window._currentFilteredData = filtered;
+    renderDetailView(filtered);
+    renderSummaryStats();
+  }
+
+  // 상세 보기 재렌더링
+  window.renderDetailView = function(dataList) {
+    const contentDiv = document.getElementById('viewSlotContent');
+    contentDiv.innerHTML = '';
+
+    dataList.forEach((entry, index) => {
+      const entryDiv = document.createElement('div');
+      entryDiv.style.cssText = 'border:1px solid #ddd;border-radius:8px;padding:16px;margin-bottom:16px;background:#f9f9f9;';
+
+      let entryHtml = `
+        <div style="background:#2d6cdf;color:#fff;padding:8px 12px;border-radius:6px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;">
+          <strong style="font-size:16px;">[${index + 1}] ${entry.userName}</strong>
+          <span style="font-size:12px;opacity:0.9;">${new Date(entry.timestamp).toLocaleString('ko-KR')}</span>
+        </div>
+      `;
+
+      entry.dragons.forEach((dragon, dragonIdx) => {
+        const dragonName = dragon.name || `드래곤 ${dragonIdx + 1}`;
+
+        let gemTotal = {hp: 0, atk: 0, df: 0};
+        dragon.gems.forEach(gem => {
+          if (gem.type === 'HP') gemTotal.hp += gem.value;
+          if (gem.type === 'ATK') gemTotal.atk += gem.value;
+          if (gem.type === 'DEF') gemTotal.df += gem.value;
+        });
+
+        const pot = new Stats(24, 6, 6);
+        const col = new Stats(240, 60, 60);
+        const gem = new Stats(gemTotal.hp, gemTotal.atk, gemTotal.df);
+        const acc = new Stats(
+          (dragon.accessory.hp + dragon.enchant.hp) / 100,
+          (dragon.accessory.atk + dragon.enchant.atk) / 100,
+          (dragon.accessory.df + dragon.enchant.df) / 100
+        );
+        const pend = new Stats(dragon.pendant.hp / 100, dragon.pendant.atk / 100, dragon.pendant.df / 100);
+        const spf = new Stats(dragon.spirit.flatHp, dragon.spirit.flatAtk, dragon.spirit.flatDf);
+        const spp = new Stats(dragon.spirit.pctHp / 100, dragon.spirit.pctAtk / 100, dragon.spirit.pctDf / 100);
+        const spe = new Stats(dragon.spirit.extraHp, dragon.spirit.extraAtk, dragon.spirit.extraDf);
+        const bf = new Stats(dragon.buff.hp / 100, dragon.buff.atk / 100, dragon.buff.df / 100);
+        const db = new Stats(dragon.debuff.hp / 100, dragon.debuff.atk / 100, dragon.debuff.df / 100);
+
+        const base = window.dragon && window.dragon[dragon.level] && window.dragon[dragon.level][dragon.type]
+          ? window.dragon[dragon.level][dragon.type]
+          : new Stats(1160, 282, 133);
 
         const [finalStats, eValue, bValue] = calcPredict(base, gem, pot, acc, pend, spf, spp, spe, col, bf, db);
 
@@ -1315,7 +1478,6 @@ function renderOneResult(idx){
           <div style="border:1px solid #ccc;border-radius:6px;padding:12px;margin-bottom:10px;background:#fff;">
             <h4 style="margin:0 0 10px;color:#2d6cdf;border-bottom:1px solid #eee;padding-bottom:6px;">🐉 ${dragonName}</h4>
 
-            <!-- 최종 스탯 & 지표 (상단 강조) -->
             <div style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);color:#fff;padding:12px;border-radius:6px;margin-bottom:12px;">
               <div style="font-size:14px;font-weight:700;margin-bottom:8px;">📊 최종 계산 결과</div>
               <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;font-size:13px;">
@@ -1330,63 +1492,22 @@ function renderOneResult(idx){
                 </div>
                 <div style="background:rgba(255,255,255,0.2);padding:6px;border-radius:4px;text-align:center;">
                   <div style="font-size:11px;opacity:0.9;">B-Value (비벨)</div>
-                  <div style="font-size:18px;font-weight:900;">${(bValue/1e6).toFixed(3)}M</div>
+                  <div style="font-size:18px;font-weight:900;">${(bValue/1e6).toFixed(3)}</div>
                 </div>
               </div>
             </div>
 
-            <!-- 입력 스탯 상세 -->
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;font-size:13px;">
-              <div>
-                <strong>등급/타입:</strong> ${dragon.level} / ${dragon.type}
-              </div>
-
-              <div>
-                <strong>젬 구성:</strong><br>
-                ${dragon.gems.map((gem, i) =>
-                  gem.type ? `젬${i+1}: ${gem.type} ${gem.value}` : `젬${i+1}: 없음`
-                ).join('<br>')}
-              </div>
-
-              <div>
-                <strong>장신구 (%):</strong><br>
-                HP ${dragon.accessory.hp}% / ATK ${dragon.accessory.atk}% / DEF ${dragon.accessory.df}%
-              </div>
-
-              <div>
-                <strong>인챈트 (%):</strong><br>
-                HP ${dragon.enchant.hp}% / ATK ${dragon.enchant.atk}% / DEF ${dragon.enchant.df}%
-              </div>
-
-              <div>
-                <strong>펜던트 (%):</strong><br>
-                HP ${dragon.pendant.hp}% / ATK ${dragon.pendant.atk}% / DEF ${dragon.pendant.df}%
-              </div>
-
-              <div>
-                <strong>정령 플옵:</strong><br>
-                HP ${dragon.spirit.flatHp} / ATK ${dragon.spirit.flatAtk} / DEF ${dragon.spirit.flatDf}
-              </div>
-
-              <div>
-                <strong>정령 퍼옵 (%):</strong><br>
-                HP ${dragon.spirit.pctHp}% / ATK ${dragon.spirit.pctAtk}% / DEF ${dragon.spirit.pctDf}%
-              </div>
-
-              <div>
-                <strong>정령 부가옵:</strong><br>
-                HP ${dragon.spirit.extraHp} / ATK ${dragon.spirit.extraAtk} / DEF ${dragon.spirit.extraDf}
-              </div>
-
-              <div>
-                <strong>버프 (%):</strong><br>
-                HP ${dragon.buff.hp}% / ATK ${dragon.buff.atk}% / DEF ${dragon.buff.df}%
-              </div>
-
-              <div>
-                <strong>디버프 (%):</strong><br>
-                HP ${dragon.debuff.hp}% / ATK ${dragon.debuff.atk}% / DEF ${dragon.debuff.df}%
-              </div>
+              <div><strong>등급/타입:</strong> ${dragon.level} / ${dragon.type}</div>
+              <div><strong>젬 구성:</strong><br>${dragon.gems.map((gem, i) => gem.type ? `젬${i+1}: ${gem.type} ${gem.value}` : `젬${i+1}: 없음`).join('<br>')}</div>
+              <div><strong>장신구 (%):</strong><br>HP ${dragon.accessory.hp}% / ATK ${dragon.accessory.atk}% / DEF ${dragon.accessory.df}%</div>
+              <div><strong>인챈트 (%):</strong><br>HP ${dragon.enchant.hp}% / ATK ${dragon.enchant.atk}% / DEF ${dragon.enchant.df}%</div>
+              <div><strong>펜던트 (%):</strong><br>HP ${dragon.pendant.hp}% / ATK ${dragon.pendant.atk}% / DEF ${dragon.pendant.df}%</div>
+              <div><strong>정령 플옵:</strong><br>HP ${dragon.spirit.flatHp} / ATK ${dragon.spirit.flatAtk} / DEF ${dragon.spirit.flatDf}</div>
+              <div><strong>정령 퍼옵 (%):</strong><br>HP ${dragon.spirit.pctHp}% / ATK ${dragon.spirit.pctAtk}% / DEF ${dragon.spirit.pctDf}%</div>
+              <div><strong>정령 부가옵:</strong><br>HP ${dragon.spirit.extraHp} / ATK ${dragon.spirit.extraAtk} / DEF ${dragon.spirit.extraDf}</div>
+              <div><strong>버프 (%):</strong><br>HP ${dragon.buff.hp}% / ATK ${dragon.buff.atk}% / DEF ${dragon.buff.df}%</div>
+              <div><strong>디버프 (%):</strong><br>HP ${dragon.debuff.hp}% / ATK ${dragon.debuff.atk}% / DEF ${dragon.debuff.df}%</div>
             </div>
           </div>
         `;
@@ -1397,10 +1518,66 @@ function renderOneResult(idx){
     });
   }
 
-  // 열람 모달 닫기
-  window.closeViewSlotModal = function() {
-    const modal = document.getElementById('viewSlotModal');
-    if (modal) modal.remove();
+  // 엑셀 다운로드 (CSV 형식)
+  window.exportToExcel = function() {
+    const dataList = window._currentFilteredData || window._currentSlotData || [];
+
+    if (dataList.length === 0) {
+      alert('내보낼 데이터가 없습니다.');
+      return;
+    }
+
+    // CSV 헤더
+    let csv = '유저이름,드래곤1,드래곤2,드래곤3,합계\n';
+
+    // CSV 데이터
+    dataList.forEach(entry => {
+      const bValues = [];
+
+      entry.dragons.forEach(dragon => {
+        let gemTotal = {hp: 0, atk: 0, df: 0};
+        dragon.gems.forEach(gem => {
+          if (gem.type === 'HP') gemTotal.hp += gem.value;
+          if (gem.type === 'ATK') gemTotal.atk += gem.value;
+          if (gem.type === 'DEF') gemTotal.df += gem.value;
+        });
+
+        const pot = new Stats(24, 6, 6);
+        const col = new Stats(240, 60, 60);
+        const gem = new Stats(gemTotal.hp, gemTotal.atk, gemTotal.df);
+        const acc = new Stats(
+          (dragon.accessory.hp + dragon.enchant.hp) / 100,
+          (dragon.accessory.atk + dragon.enchant.atk) / 100,
+          (dragon.accessory.df + dragon.enchant.df) / 100
+        );
+        const pend = new Stats(dragon.pendant.hp / 100, dragon.pendant.atk / 100, dragon.pendant.df / 100);
+        const spf = new Stats(dragon.spirit.flatHp, dragon.spirit.flatAtk, dragon.spirit.flatDf);
+        const spp = new Stats(dragon.spirit.pctHp / 100, dragon.spirit.pctAtk / 100, dragon.spirit.pctDf / 100);
+        const spe = new Stats(dragon.spirit.extraHp, dragon.spirit.extraAtk, dragon.spirit.extraDf);
+        const bf = new Stats(dragon.buff.hp / 100, dragon.buff.atk / 100, dragon.buff.df / 100);
+        const db = new Stats(dragon.debuff.hp / 100, dragon.debuff.atk / 100, dragon.debuff.df / 100);
+
+        const base = window.dragon && window.dragon[dragon.level] && window.dragon[dragon.level][dragon.type]
+          ? window.dragon[dragon.level][dragon.type]
+          : new Stats(1160, 282, 133);
+
+        const [finalStats, eValue, bValue] = calcPredict(base, gem, pot, acc, pend, spf, spp, spe, col, bf, db);
+        bValues.push(bValue / 1e6);
+      });
+
+      const total = bValues.reduce((sum, val) => sum + val, 0);
+      csv += `${entry.userName},${bValues[0].toFixed(3)},${bValues[1].toFixed(3)},${bValues[2].toFixed(3)},${total.toFixed(3)}\n`;
+    });
+
+    // BOM 추가 (한글 깨짐 방지)
+    const BOM = '\uFEFF';
+    const blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `dragon_stats_${new Date().getTime()}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
   }
 
   // 슬롯의 데이터만 비우기 (슬롯은 유지)
