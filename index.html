@@ -135,6 +135,14 @@
 
     pre.result{font-size:11px;padding:10px;min-height:150px;overflow-x:auto;}
   }
+
+  /* 모바일에서 4컬럼 그리드 세로 정렬 */
+  @media (max-width: 768px) {
+    #viewSlotContent .grid-4col,
+    div[style*="grid-template-columns:repeat(4,1fr)"] {
+      grid-template-columns: 1fr !important;
+    }
+  }
 </style>
 </head>
 
@@ -1498,30 +1506,30 @@ function renderOneResult(idx){
             </div>
 
             <!-- 입력 스탯 상세 (4개 컬럼으로 그룹화) -->
-            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:15px;font-size:13px;">
+            <div style="display:grid !important;grid-template-columns:1fr 1fr 1fr 1fr !important;gap:15px;font-size:13px;">
 
               <!-- 1그룹: 기본 정보 -->
-              <div style="display:flex;flex-direction:column;gap:10px;">
+              <div style="display:flex !important;flex-direction:column !important;gap:10px;">
                 <div><strong>등급/타입:</strong><br>${dragon.level} / ${dragon.type}</div>
                 <div><strong>젬 구성:</strong><br>${dragon.gems.map((gem, i) => gem.type ? `젬${i+1}: ${gem.type} ${gem.value}` : `젬${i+1}: 없음`).join('<br>')}</div>
               </div>
 
               <!-- 2그룹: 장비 옵션 -->
-              <div style="display:flex;flex-direction:column;gap:10px;">
+              <div style="display:flex !important;flex-direction:column !important;gap:10px;">
                 <div><strong>장신구 (%):</strong><br>HP ${dragon.accessory.hp}% / ATK ${dragon.accessory.atk}% / DEF ${dragon.accessory.df}%</div>
                 <div><strong>인챈트 (%):</strong><br>HP ${dragon.enchant.hp}% / ATK ${dragon.enchant.atk}% / DEF ${dragon.enchant.df}%</div>
                 <div><strong>펜던트 (%):</strong><br>HP ${dragon.pendant.hp}% / ATK ${dragon.pendant.atk}% / DEF ${dragon.pendant.df}%</div>
               </div>
 
               <!-- 3그룹: 정령 옵션 -->
-              <div style="display:flex;flex-direction:column;gap:10px;">
+              <div style="display:flex !important;flex-direction:column !important;gap:10px;">
                 <div><strong>정령 플옵:</strong><br>HP ${dragon.spirit.flatHp} / ATK ${dragon.spirit.flatAtk} / DEF ${dragon.spirit.flatDf}</div>
                 <div><strong>정령 퍼옵 (%):</strong><br>HP ${dragon.spirit.pctHp}% / ATK ${dragon.spirit.pctAtk}% / DEF ${dragon.spirit.pctDf}%</div>
                 <div><strong>정령 부가옵:</strong><br>HP ${dragon.spirit.extraHp} / ATK ${dragon.spirit.extraAtk} / DEF ${dragon.spirit.extraDf}</div>
               </div>
 
               <!-- 4그룹: 버프/디버프 -->
-              <div style="display:flex;flex-direction:column;gap:10px;">
+              <div style="display:flex !important;flex-direction:column !important;gap:10px;">
                 <div><strong>버프 (%):</strong><br>HP ${dragon.buff.hp}% / ATK ${dragon.buff.atk}% / DEF ${dragon.buff.df}%</div>
                 <div><strong>디버프 (%):</strong><br>HP ${dragon.debuff.hp}% / ATK ${dragon.debuff.atk}% / DEF ${dragon.debuff.df}%</div>
               </div>
