@@ -24,7 +24,7 @@
   .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
   .btn:hover{background:#f0f0f0}
 
-  .calc-container{display:none}
+  .calc-container{display:none;overflow-y:auto;height:100%}
   .calc-container.active{display:block}
 
   fieldset{background:#fff;border:1px solid #ccc;padding:12px;margin-bottom:14px;border-radius:8px}
@@ -258,9 +258,16 @@
 
       <div class="row-spirit"><strong>정령 + (플옵)</strong><input id="sf_hp" type="number" value="0"><input id="sf_atk" type="number" value="0"><input id="sf_df" type="number" value="0"></div>
       <div class="row-spirit"><strong>정령 % (퍼옵)</strong><input id="sp_hp" type="number" value="0"><input id="sp_atk" type="number" value="0"><input id="sp_df" type="number" value="0"><span class="small">(% 입력)</span></div>
-      <div class="row-spirit"><strong>정령 부가옵</strong><input id="se_hp" type="number" value="0"><input id="se_atk" type="number" value="0"><input id="se_df" type="number" value="0"></div>
+      <div class="row-spirit"><strong>정령 옵</strong><input id="se_hp" type="number" value="0"><input id="se_atk" type="number" value="0"><input id="se_df" type="number" value="0"></div>
       <div class="row-spirit"><strong>버프 (%)</strong><input id="bf_hp" type="number" value="0"><input id="bf_atk" type="number" value="0"><input id="bf_df" type="number" value="0"></div>
       <div class="row-spirit"><strong>디버프 (%)</strong><input id="db_hp" type="number" value="0"><input id="db_atk" type="number" value="0"><input id="db_df" type="number" value="0"></div>
+
+      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
+        <span style="font-weight:700;">→ 수동계산기에 적용:</span>
+        <button class="btn" type="button" onclick="copyToManualDragon(1)">드래곤1</button>
+        <button class="btn" type="button" onclick="copyToManualDragon(2)">드래곤2</button>
+        <button class="btn" type="button" onclick="copyToManualDragon(3)">드래곤3</button>
+      </div>
     </fieldset>
 
     <!-- 기타 -->
@@ -346,6 +353,49 @@
       const el=document.getElementById(id);
       if(el) el.value=0;
     });
+  }
+
+  function copyToManualDragon(dragonIdx){
+    // 자동계산기의 정령/버프/디버프 값 읽기
+    const sf_hp = val('sf_hp');
+    const sf_atk = val('sf_atk');
+    const sf_df = val('sf_df');
+    const sp_hp = val('sp_hp');
+    const sp_atk = val('sp_atk');
+    const sp_df = val('sp_df');
+    const se_hp = val('se_hp');
+    const se_atk = val('se_atk');
+    const se_df = val('se_df');
+    const bf_hp = val('bf_hp');
+    const bf_atk = val('bf_atk');
+    const bf_df = val('bf_df');
+    const db_hp = val('db_hp');
+    const db_atk = val('db_atk');
+    const db_df = val('db_df');
+
+    // 수동계산기의 해당 드래곤에 값 적용
+    const setVal = (id, value) => {
+      const el = document.getElementById(id);
+      if(el) el.value = value;
+    };
+
+    setVal(`d${dragonIdx}_sf_hp`, sf_hp);
+    setVal(`d${dragonIdx}_sf_atk`, sf_atk);
+    setVal(`d${dragonIdx}_sf_df`, sf_df);
+    setVal(`d${dragonIdx}_sp_hp`, sp_hp);
+    setVal(`d${dragonIdx}_sp_atk`, sp_atk);
+    setVal(`d${dragonIdx}_sp_df`, sp_df);
+    setVal(`d${dragonIdx}_se_hp`, se_hp);
+    setVal(`d${dragonIdx}_se_atk`, se_atk);
+    setVal(`d${dragonIdx}_se_df`, se_df);
+    setVal(`d${dragonIdx}_bf_hp`, bf_hp);
+    setVal(`d${dragonIdx}_bf_atk`, bf_atk);
+    setVal(`d${dragonIdx}_bf_df`, bf_df);
+    setVal(`d${dragonIdx}_db_hp`, db_hp);
+    setVal(`d${dragonIdx}_db_atk`, db_atk);
+    setVal(`d${dragonIdx}_db_df`, db_df);
+
+    alert(`드래곤 ${dragonIdx}에 정령/버프/디버프 값이 적용되었습니다.`);
   }
 
   /* =========================
@@ -680,7 +730,7 @@
           <input id="d${idx}_sp_df" type="number" value="0">
           <span class="small">% 입력</span>
         </div>
-        <div class="row-spirit"><strong>정령 부가</strong>
+        <div class="row-spirit"><strong>정령 부가옵</strong>
           <input id="d${idx}_se_hp" type="number" value="0">
           <input id="d${idx}_se_atk" type="number" value="0">
           <input id="d${idx}_se_df" type="number" value="0">
@@ -745,7 +795,7 @@ function renderOneResult(idx){
       <div class="cell h center">공격력</div>
       <div class="cell h center">방어력</div>
 
-      <div class="cell section">기본 스탯</div>
+      <div class="cell">기본 스탯</div>
       <div class="cell right" id="d${idx}_c_base_hp">-</div>
       <div class="cell right" id="d${idx}_c_base_atk">-</div>
       <div class="cell right" id="d${idx}_c_base_df">-</div>
@@ -762,7 +812,7 @@ function renderOneResult(idx){
 
       <div class="cell">정령 +</div><div class="cell right" id="d${idx}_c_spf_hp">0</div><div class="cell right" id="d${idx}_c_spf_atk">0</div><div class="cell right" id="d${idx}_c_spf_df">0</div>
       <div class="cell">정령 %</div><div class="cell right" id="d${idx}_c_spp_hp">0%</div><div class="cell right" id="d${idx}_c_spp_atk">0%</div><div class="cell right" id="d${idx}_c_spp_df">0%</div>
-      <div class="cell">정령 부가</div><div class="cell right" id="d${idx}_c_spe_hp">0</div><div class="cell right" id="d${idx}_c_spe_atk">0</div><div class="cell right" id="d${idx}_c_spe_df">0</div>
+      <div class="cell">정령 부가옵</div><div class="cell right" id="d${idx}_c_spe_hp">0</div><div class="cell right" id="d${idx}_c_spe_atk">0</div><div class="cell right" id="d${idx}_c_spe_df">0</div>
       <div class="cell">버프 %</div><div class="cell right" id="d${idx}_c_bf_hp">0%</div><div class="cell right" id="d${idx}_c_bf_atk">0%</div><div class="cell right" id="d${idx}_c_bf_df">0%</div>
       <div class="cell">디버프 %</div><div class="cell right" id="d${idx}_c_db_hp">0%</div><div class="cell right" id="d${idx}_c_db_atk">0%</div><div class="cell right" id="d${idx}_c_db_df">0%</div>
 
@@ -893,11 +943,13 @@ function renderOneResult(idx){
       manualDiv.classList.remove('active');
       btnAuto.classList.add('primary');
       btnManual.classList.remove('primary');
+      window.scrollTo(0, 0); // 스크롤 초기화
     }else{
       manualDiv.classList.add('active');
       autoDiv.classList.remove('active');
       btnManual.classList.add('primary');
       btnAuto.classList.remove('primary');
+      window.scrollTo(0, 0); // 스크롤 초기화
     }
   }
   btnAuto.onclick=()=>switchMode('auto');
