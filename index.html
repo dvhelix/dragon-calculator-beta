@@ -136,10 +136,10 @@
     pre.result{font-size:11px;padding:10px;min-height:150px;overflow-x:auto;}
   }
 
-  /* 모바일에서 auto-fit 방식으로 변경 */
+  /* 모바일에서 세로로 쌓기 */
   @media (max-width: 768px) {
     #viewSlotContent div[style*="grid-template-columns:1fr 1fr 1fr 1fr"] {
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) !important;
+      grid-template-columns: 1fr !important;
     }
   }
 </style>
@@ -394,6 +394,7 @@
     );
     return [f, eVal(f), bVal(f)];
   }
+  // 헬퍼 함수: 입력값 가져오기
   function val(id){ return Number(document.getElementById(id)?.value||0); }
 
   function resetSpiritBuffs(){
@@ -404,45 +405,12 @@
   }
 
   function copyToManualDragon(dragonIdx){
-    // 자동계산기의 정령/버프/디버프 값 읽기
-    const sf_hp = val('sf_hp');
-    const sf_atk = val('sf_atk');
-    const sf_df = val('sf_df');
-    const sp_hp = val('sp_hp');
-    const sp_atk = val('sp_atk');
-    const sp_df = val('sp_df');
-    const se_hp = val('se_hp');
-    const se_atk = val('se_atk');
-    const se_df = val('se_df');
-    const bf_hp = val('bf_hp');
-    const bf_atk = val('bf_atk');
-    const bf_df = val('bf_df');
-    const db_hp = val('db_hp');
-    const db_atk = val('db_atk');
-    const db_df = val('db_df');
-
-    // 수동계산기의 해당 드래곤에 값 적용
-    const setVal = (id, value) => {
-      const el = document.getElementById(id);
+    // 자동계산기의 정령/버프/디버프 값을 수동계산기로 복사
+    ['sf_hp','sf_atk','sf_df','sp_hp','sp_atk','sp_df','se_hp','se_atk','se_df','bf_hp','bf_atk','bf_df','db_hp','db_atk','db_df'].forEach(field => {
+      const value = val(field);
+      const el = document.getElementById(`d${dragonIdx}_${field}`);
       if(el) el.value = value;
-    };
-
-    setVal(`d${dragonIdx}_sf_hp`, sf_hp);
-    setVal(`d${dragonIdx}_sf_atk`, sf_atk);
-    setVal(`d${dragonIdx}_sf_df`, sf_df);
-    setVal(`d${dragonIdx}_sp_hp`, sp_hp);
-    setVal(`d${dragonIdx}_sp_atk`, sp_atk);
-    setVal(`d${dragonIdx}_sp_df`, sp_df);
-    setVal(`d${dragonIdx}_se_hp`, se_hp);
-    setVal(`d${dragonIdx}_se_atk`, se_atk);
-    setVal(`d${dragonIdx}_se_df`, se_df);
-    setVal(`d${dragonIdx}_bf_hp`, bf_hp);
-    setVal(`d${dragonIdx}_bf_atk`, bf_atk);
-    setVal(`d${dragonIdx}_bf_df`, bf_df);
-    setVal(`d${dragonIdx}_db_hp`, db_hp);
-    setVal(`d${dragonIdx}_db_atk`, db_atk);
-    setVal(`d${dragonIdx}_db_df`, db_df);
-
+    });
     alert(`드래곤 ${dragonIdx}에 정령/버프/디버프 값이 적용되었습니다.`);
   }
 
@@ -932,7 +900,7 @@ function renderOneResult(idx){
   allResults.appendChild(sheet);
 }
 
-  function num(id){ return Number(document.getElementById(id)?.value||0); }
+  const num = val;  // 별칭 (자동 계산기와 수동 계산기 모두 사용)
   function setText(id, v){ const el=document.getElementById(id); if(el) el.textContent=v; }
 
   function manualCalcOne(idx){
