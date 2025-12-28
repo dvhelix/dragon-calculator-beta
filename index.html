@@ -150,6 +150,7 @@
     <h2>드래곤 비벨/이벨 통합 계산기</h2>
     <div class="modebar">
       <button class="btn primary" id="btnAuto">자동 계산기</button>
+      <button class="btn" id="btnResult">예측기 결과</button>
       <button class="btn" id="btnManual">수동 계산기</button>
       <button class="btn" id="btnServer">저장 서버</button>
     </div>
@@ -161,9 +162,9 @@
     <fieldset>
       <legend>등급 / 타입 선택</legend>
       <div class="row">
-        <label><input type="radio" name="level" value="7.0" checked>7.0</label>
+        <label><input type="radio" name="level" value="7.0">7.0</label>
         <label><input type="radio" name="level" value="8.0">8.0</label>
-        <label><input type="radio" name="level" value="9.0">9.0</label>
+        <label><input type="radio" name="level" value="9.0" checked>9.0</label>
       </div>
       <div class="row" style="margin-top:6px">
         <label><input type="checkbox" class="dtype" value="공격형" checked>공격형</label>
@@ -205,6 +206,8 @@
     <fieldset>
       <legend>장신구 선택 (복수 선택 가능)</legend>
       <div class="toolbar">
+        <button class="btn" type="button" id="btnToggleFavorites" onclick="toggleFavoritesFilter()">즐겨찾기만 보기</button>
+        <button class="btn" type="button" onclick="toggleLevel(20)">Lv20 전체 선택/해제</button>
         <button class="btn" type="button" onclick="toggleLevel(19)">Lv19 전체 선택/해제</button>
         <button class="btn" type="button" onclick="toggleLevel(18)">Lv18 전체 선택/해제</button>
         <button class="btn" type="button" onclick="toggleLevel(17)">Lv17 전체 선택/해제</button>
@@ -228,8 +231,8 @@
       <!-- 자동 분배용 (Ver1, Ver2 공용) -->
       <div class="row" id="pendant_auto_row">
         <strong>종류 / 값 입력:</strong>
-        <label><input type="radio" name="pendant_mode" value="별" checked>별</label>
-        <label><input type="radio" name="pendant_mode" value="달">달</label>
+        <label><input type="radio" name="pendant_mode" value="별">별</label>
+        <label><input type="radio" name="pendant_mode" value="달" checked>달</label>
         <label><input type="radio" name="pendant_mode" value="태양">태양</label>
         <input id="pendant_value" type="number" value="12" style="width:90px;"> %
         <span class="small" id="pendantHint">별 ≤ 6, 달 ≤ 12, 태양 ≤ 18</span>
@@ -280,10 +283,23 @@
     <div class="toolbar">
       <button class="btn primary" type="button" onclick="calcAuto()">계산하기</button>
       <button class="btn" type="button" onclick="downloadTxt()">저장하기 (.txt)</button>
+      <button class="btn" type="button" onclick="clearAllResults()" style="background:#ff9800;color:#fff;border-color:#ff9800;">예측기 결과 초기화</button>
+      <button class="btn" type="button" onclick="resetAllSettings()" style="background:#ff6b6b;color:#fff;border-color:#ff6b6b;">설정 초기화</button>
     </div>
 
     <h3>결과</h3>
     <pre id="autoResult" class="result"></pre>
+  </div>
+
+  <div id="resultCalc" class="calc-container">
+    <h3 style="margin:0 0 16px">예측기 결과 (누적)</h3>
+
+    <div class="toolbar" style="margin-bottom:16px">
+      <button class="btn" type="button" onclick="downloadAllResults()">전체 저장 (.txt)</button>
+      <button class="btn" type="button" onclick="clearAllResults()" style="background:#ff6b6b;color:#fff;border-color:#ff6b6b;">전체 삭제</button>
+    </div>
+
+    <pre id="resultStorage" class="result" style="min-height:400px"></pre>
   </div>
 
   <div id="manualCalc" class="calc-container">
@@ -297,6 +313,7 @@
       <button class="btn primary" onclick="manualCalcAll()">수동 계산</button>
       <button class="btn" onclick="savePngAll()">결과를 PNG로 저장</button>
       <button class="btn" onclick="saveToServer()" style="background:#00aa88;color:#fff;border-color:#00aa88">서버에 저장</button>
+      <button class="btn" type="button" onclick="resetAllSettings()" style="background:#ff6b6b;color:#fff;border-color:#ff6b6b;">설정 초기화</button>
     </div>
 
     <!-- 결과 시트 (가로 비교) -->
@@ -414,7 +431,158 @@
     alert(`드래곤 ${dragonIdx}에 정령/버프/디버프 값이 적용되었습니다.`);
   }
 
-  const ACC_TABLE = [
+  // ===== LocalStorage 자동 저장/복원 시스템 =====
+  function saveSettings(){
+    try {
+      const settings = {
+        // 등급
+        level: document.querySelector('input[name="level"]:checked')?.value || '9.0',
+
+        // 드래곤 타입
+        dragonTypes: Array.from(document.querySelectorAll('.dtype'))
+          .filter(cb => cb.checked)
+          .map(cb => cb.value),
+
+        // 젬 기본값
+        gemHp: document.querySelector('input[name="gem_hp"]:checked')?.value || '160',
+        gemAtk: document.querySelector('input[name="gem_atk"]:checked')?.value || '40',
+        gemDf: document.querySelector('input[name="gem_df"]:checked')?.value || '40',
+
+        // 펜던트 설정
+        pendantVer: document.querySelector('input[name="pendant_ver"]:checked')?.value || 'v1',
+        pendantMode: document.querySelector('input[name="pendant_mode"]:checked')?.value || '달',
+        pendantValue: document.getElementById('pendant_value')?.value || '12',
+        pendantStats: Array.from(document.querySelectorAll('.pendStat'))
+          .filter(cb => cb.checked)
+          .map(cb => cb.value),
+
+        // 정령/버프/디버프
+        spirit: {
+          sf_hp: val('sf_hp'), sf_atk: val('sf_atk'), sf_df: val('sf_df'),
+          sp_hp: val('sp_hp'), sp_atk: val('sp_atk'), sp_df: val('sp_df'),
+          se_hp: val('se_hp'), se_atk: val('se_atk'), se_df: val('se_df'),
+          bf_hp: val('bf_hp'), bf_atk: val('bf_atk'), bf_df: val('bf_df'),
+          db_hp: val('db_hp'), db_atk: val('db_atk'), db_df: val('db_df')
+        },
+
+        // Top N
+        topN: document.getElementById('top_n')?.value || '5',
+
+        // 저장 시간
+        savedAt: new Date().toISOString()
+      };
+
+      localStorage.setItem('dragonCalcSettings', JSON.stringify(settings));
+      console.log('✅ 설정 자동 저장 완료');
+    } catch (e) {
+      console.error('설정 저장 실패:', e);
+    }
+  }
+
+  function loadSettings(){
+    try {
+      const saved = localStorage.getItem('dragonCalcSettings');
+      if (!saved) return;
+
+      const settings = JSON.parse(saved);
+
+      // 등급 복원
+      const levelRadio = document.querySelector(`input[name="level"][value="${settings.level}"]`);
+      if (levelRadio) levelRadio.checked = true;
+
+      // 드래곤 타입 복원
+      document.querySelectorAll('.dtype').forEach(cb => {
+        cb.checked = settings.dragonTypes?.includes(cb.value) || false;
+      });
+
+      // 젬 기본값 복원
+      const gemHpRadio = document.querySelector(`input[name="gem_hp"][value="${settings.gemHp}"]`);
+      if (gemHpRadio) gemHpRadio.checked = true;
+      const gemAtkRadio = document.querySelector(`input[name="gem_atk"][value="${settings.gemAtk}"]`);
+      if (gemAtkRadio) gemAtkRadio.checked = true;
+      const gemDfRadio = document.querySelector(`input[name="gem_df"][value="${settings.gemDf}"]`);
+      if (gemDfRadio) gemDfRadio.checked = true;
+
+      // 펜던트 설정 복원
+      const pendantVerRadio = document.querySelector(`input[name="pendant_ver"][value="${settings.pendantVer}"]`);
+      if (pendantVerRadio) {
+        pendantVerRadio.checked = true;
+        pendantVerRadio.dispatchEvent(new Event('change'));
+      }
+      const pendantModeRadio = document.querySelector(`input[name="pendant_mode"][value="${settings.pendantMode}"]`);
+      if (pendantModeRadio) pendantModeRadio.checked = true;
+      const pendantValueInput = document.getElementById('pendant_value');
+      if (pendantValueInput) pendantValueInput.value = settings.pendantValue;
+
+      document.querySelectorAll('.pendStat').forEach(cb => {
+        cb.checked = settings.pendantStats?.includes(cb.value) || false;
+      });
+
+      // 정령/버프/디버프 복원
+      if (settings.spirit) {
+        Object.keys(settings.spirit).forEach(key => {
+          const el = document.getElementById(key);
+          if (el) el.value = settings.spirit[key];
+        });
+      }
+
+      // Top N 복원
+      const topNInput = document.getElementById('top_n');
+      if (topNInput) topNInput.value = settings.topN;
+
+      console.log('✅ 설정 복원 완료 (저장 시간:', settings.savedAt, ')');
+    } catch (e) {
+      console.error('설정 복원 실패:', e);
+    }
+  }
+
+  // 자동 저장 활성화
+  function enableAutoSave(){
+    // 모든 입력 요소에 자동 저장 이벤트 연결
+    document.querySelectorAll('input[name="level"], .dtype, input[name="gem_hp"], input[name="gem_atk"], input[name="gem_df"], input[name="pendant_ver"], input[name="pendant_mode"], .pendStat').forEach(el => {
+      el.addEventListener('change', saveSettings);
+    });
+
+    // 숫자 입력 필드는 debounce 적용 (1초 후 저장)
+    let saveTimeout;
+    document.querySelectorAll('#pendant_value, #top_n, #sf_hp, #sf_atk, #sf_df, #sp_hp, #sp_atk, #sp_df, #se_hp, #se_atk, #se_df, #bf_hp, #bf_atk, #bf_df, #db_hp, #db_atk, #db_df').forEach(el => {
+      el.addEventListener('input', () => {
+        clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(saveSettings, 1000);
+      });
+    });
+  }
+
+  // 모든 설정 초기화
+  function resetAllSettings() {
+    const confirmed = confirm(
+      '모든 저장된 설정을 초기화하시겠습니까?\n\n' +
+      '초기화되는 내용:\n' +
+      '- 등급, 드래곤 타입\n' +
+      '- 젬 기본값\n' +
+      '- 펜던트 설정\n' +
+      '- 정령/버프/디버프 값\n' +
+      '- 장신구 즐겨찾기\n' +
+      '- Top N 설정\n\n' +
+      '※ 이 작업은 되돌릴 수 없습니다.'
+    );
+
+    if (confirmed) {
+      try {
+        // LocalStorage에서 모든 설정 삭제
+        localStorage.removeItem('dragonCalcSettings');
+        localStorage.removeItem('accFavorites');
+
+        alert('모든 설정이 초기화되었습니다.\n페이지를 새로고침합니다.');
+        location.reload();
+      } catch (e) {
+        console.error('설정 초기화 실패:', e);
+        alert('설정 초기화 중 오류가 발생했습니다.');
+      }
+    }
+  }
+
+  const ACC_TABLE = [ ["악보(체)",20,20,0,0], ["여보(방)",20,0,0,20], ["황보(공)",20,0,20,0], ["바뿔(공/방)",20,0,10,10], ["바뿔(체/방)",20,10,0,10], ["바뿔(체/공)",20,10,10,0],
     ["바뿔(공/방)",19,0,10,9],["바뿔(체/방)",19,10,0,9],["바뿔(공/체)",19,9,10,0],
     ["불뿔(공/체)",19,6,13,0],["불뿔(공/방)",19,0,13,6],
     ["물뿔(체/방)",19,13,0,6],["물뿔(체/공)",19,13,6,0],
@@ -432,20 +600,99 @@
     ["여보",17,0,0,17],["황보",17,0,17,0],["악보",17,17,0,0],
   ];
   let accCheckboxes = [];
+  let accFavorites = new Set();  // 즐겨찾기 장신구 ID 저장
+  let showOnlyFavorites = false; // 즐겨찾기 필터 상태
+
+  // 즐겨찾기 불러오기
+  function loadFavorites() {
+    try {
+      const saved = localStorage.getItem('accFavorites');
+      if (saved) {
+        accFavorites = new Set(JSON.parse(saved));
+      }
+    } catch (e) {
+      console.error('즐겨찾기 불러오기 실패:', e);
+    }
+  }
+
+  // 즐겨찾기 저장
+  function saveFavorites() {
+    try {
+      localStorage.setItem('accFavorites', JSON.stringify([...accFavorites]));
+    } catch (e) {
+      console.error('즐겨찾기 저장 실패:', e);
+    }
+  }
+
+  // 즐겨찾기 토글
+  function toggleFavorite(accId) {
+    if (accFavorites.has(accId)) {
+      accFavorites.delete(accId);
+    } else {
+      accFavorites.add(accId);
+    }
+    saveFavorites();
+    renderAccessories();
+  }
 
   function renderAccessories() {
     const accListEl = document.getElementById('accList');
     accListEl.innerHTML = '';
     accCheckboxes = [];
-    ACC_TABLE.forEach((r, i) => {
+
+    // 즐겨찾기 정렬: 즐겨찾기가 위로
+    const sortedTable = [...ACC_TABLE].map((r, i) => ({ data: r, index: i }))
+      .sort((a, b) => {
+        const aFav = accFavorites.has('acc_' + a.index);
+        const bFav = accFavorites.has('acc_' + b.index);
+        if (aFav && !bFav) return -1;
+        if (!aFav && bFav) return 1;
+        return 0;
+      });
+
+    sortedTable.forEach(({ data: r, index: i }) => {
       const [n, l, h, a, d] = r;
       const id = 'acc_' + i;
+      const isFavorite = accFavorites.has(id);
+
+      // 즐겨찾기 필터 적용
+      if (showOnlyFavorites && !isFavorite) return;
+
       const line = document.createElement('div');
-      line.innerHTML = `<label><input type="checkbox" id="${id}"> ${n} Lv${l} | HP+${h}% ATK+${a}% DEF+${d}%</label>`;
+      line.style.cssText = 'display:flex;align-items:center;gap:6px;padding:2px 0;';
+
+      const starBtn = document.createElement('button');
+      starBtn.textContent = isFavorite ? '⭐' : '☆';
+      starBtn.style.cssText = 'border:none;background:none;cursor:pointer;font-size:16px;padding:2px 6px;';
+      starBtn.title = isFavorite ? '즐겨찾기 해제' : '즐겨찾기 추가';
+      starBtn.onclick = (e) => {
+        e.preventDefault();
+        toggleFavorite(id);
+      };
+
+      const label = document.createElement('label');
+      label.innerHTML = `<input type="checkbox" id="${id}"> ${n} Lv${l} | HP+${h}% ATK+${a}% DEF+${d}%`;
+      label.style.flex = '1';
+
+      line.appendChild(starBtn);
+      line.appendChild(label);
       accListEl.appendChild(line);
       accCheckboxes.push({ id, name: n, level: l, hp: h, atk: a, df: d });
     });
   }
+
+  // 즐겨찾기 필터 토글
+  function toggleFavoritesFilter() {
+    showOnlyFavorites = !showOnlyFavorites;
+    const btn = document.getElementById('btnToggleFavorites');
+    if (btn) {
+      btn.textContent = showOnlyFavorites ? '전체 보기' : '즐겨찾기만 보기';
+      btn.classList.toggle('primary', showOnlyFavorites);
+    }
+    renderAccessories();
+  }
+
+  loadFavorites();
   renderAccessories();
 
   function selectNone(){
@@ -467,7 +714,14 @@
     });
   });
   window.addEventListener("DOMContentLoaded", () => {
+    // 펜던트 버전 UI 초기화
     document.querySelector('input[name="pendant_ver"]:checked')?.dispatchEvent(new Event('change'));
+
+    // 저장된 설정 복원
+    loadSettings();
+
+    // 자동 저장 활성화
+    enableAutoSave();
   });
 
   function genPend(total, mode, selectedStats = ["HP","ATK","DEF"]) {
@@ -527,10 +781,19 @@
 
   function calcAuto(){
     const resultBox = document.getElementById("autoResult");
-    resultBox.textContent = "";
+    resultBox.innerHTML = '<div style="text-align:center;padding:40px;color:#666;"><div style="font-weight:700;margin-bottom:10px;">계산 중입니다...</div><small style="color:#999;">조합이 많을 경우 시간이 걸릴 수 있습니다.</small></div>';
+
+    // UI 업데이트를 위한 짧은 딜레이
+    setTimeout(() => {
+      calcAutoCore();
+    }, 50);
+  }
+
+  function calcAutoCore(){
+    const resultBox = document.getElementById("autoResult");
 
     // 1. 사용자 입력값 수집
-    const level = document.querySelector('input[name="level"]:checked').value;
+    const level = document.querySelector('input[name="level"]:checked')?.value || '9.0';
 
     const dragonTypes = {};
     document.querySelectorAll(".dtype").forEach(cb => dragonTypes[cb.value] = cb.checked);
@@ -541,9 +804,9 @@
     }
 
     const gemBase = {
-      hp: Number(document.querySelector('input[name="gem_hp"]:checked').value),
-      atk: Number(document.querySelector('input[name="gem_atk"]:checked').value),
-      df: Number(document.querySelector('input[name="gem_df"]:checked').value)
+      hp: Number(document.querySelector('input[name="gem_hp"]:checked')?.value || 160),
+      atk: Number(document.querySelector('input[name="gem_atk"]:checked')?.value || 40),
+      df: Number(document.querySelector('input[name="gem_df"]:checked')?.value || 40)
     };
 
     const selectedAcc = accCheckboxes.filter(o => document.getElementById(o.id).checked);
@@ -553,8 +816,8 @@
     }
 
     // 펜던트 설정
-    const pendantMode = document.querySelector('input[name="pendant_mode"]:checked')?.value || "별";
-    const pendantValue = Number(document.getElementById("pendant_value").value || 0);
+    const pendantMode = document.querySelector('input[name="pendant_mode"]:checked')?.value || "달";
+    const pendantValue = Number(document.getElementById("pendant_value")?.value || 12);
     const pendantVer = document.querySelector('input[name="pendant_ver"]:checked')?.value || "v1";
     const selectedStats = Array.from(document.querySelectorAll('.pendStat'))
       .filter(cb => cb.checked)
@@ -688,7 +951,48 @@
     const topResults = results.slice(0, topN)
       .map((r, i) => `[${i + 1}위] ${r.display_line1}${r.display_line2}`)
       .join("\n");
+
+    // 자동 계산기 결과 출력
     resultBox.textContent = topResults;
+
+    // 예측기 결과 탭에 자동 저장
+    const resultStorage = document.getElementById("resultStorage");
+    const timestamp = new Date().toLocaleString('ko-KR', {
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit'
+    });
+
+    const separator = resultStorage.textContent.trim() ?
+      `\n\n${'='.repeat(80)}\n[${timestamp}] 새로운 계산 결과\n${'='.repeat(80)}\n\n` :
+      `[${timestamp}] 계산 결과\n${'='.repeat(80)}\n\n`;
+
+    resultStorage.textContent = resultStorage.textContent + separator + topResults;
+  }
+
+  // 예측기 결과 탭 전체 삭제
+  function clearAllResults() {
+    if (confirm('예측기 결과 탭의 모든 결과를 삭제하시겠습니까?')) {
+      document.getElementById("resultStorage").textContent = "";
+      alert("전체 결과가 삭제되었습니다.");
+    }
+  }
+
+  // 예측기 결과 탭 전체 저장
+  function downloadAllResults() {
+    const text = document.getElementById("resultStorage").textContent || "";
+    if (!text.trim()) {
+      alert("저장할 결과가 없습니다.");
+      return;
+    }
+    const blob = new Blob([text], {type: "text/plain;charset=utf-8"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "dragon_results_all.txt";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
   }
 
   function downloadTxt(){
@@ -1000,51 +1304,78 @@ function renderOneResult(idx){
   }
 
   const autoDiv=document.getElementById('autoCalc');
+  const resultDiv=document.getElementById('resultCalc');
   const manualDiv=document.getElementById('manualCalc');
   const serverDiv=document.getElementById('serverCalc');
   const btnAuto=document.getElementById('btnAuto');
+  const btnResult=document.getElementById('btnResult');
   const btnManual=document.getElementById('btnManual');
   const btnServer=document.getElementById('btnServer');
 
   // 각 모드의 독립적인 스크롤 위치 저장
   let autoScrollPos = 0;
+  let resultScrollPos = 0;
   let manualScrollPos = 0;
   let serverScrollPos = 0;
 
   function switchMode(mode){
     if(mode==='auto'){
+      resultScrollPos = window.scrollY;
       manualScrollPos = window.scrollY;
       serverScrollPos = window.scrollY;
 
       autoDiv.classList.add('active');
+      resultDiv.classList.remove('active');
       manualDiv.classList.remove('active');
       serverDiv.classList.remove('active');
       btnAuto.classList.add('primary');
+      btnResult.classList.remove('primary');
       btnManual.classList.remove('primary');
       btnServer.classList.remove('primary');
 
       window.scrollTo(0, autoScrollPos);
+    }else if(mode==='result'){
+      autoScrollPos = window.scrollY;
+      manualScrollPos = window.scrollY;
+      serverScrollPos = window.scrollY;
+
+      resultDiv.classList.add('active');
+      autoDiv.classList.remove('active');
+      manualDiv.classList.remove('active');
+      serverDiv.classList.remove('active');
+      btnResult.classList.add('primary');
+      btnAuto.classList.remove('primary');
+      btnManual.classList.remove('primary');
+      btnServer.classList.remove('primary');
+
+      window.scrollTo(0, resultScrollPos);
     }else if(mode==='manual'){
       autoScrollPos = window.scrollY;
+      resultScrollPos = window.scrollY;
       serverScrollPos = window.scrollY;
 
       manualDiv.classList.add('active');
       autoDiv.classList.remove('active');
+      resultDiv.classList.remove('active');
       serverDiv.classList.remove('active');
       btnManual.classList.add('primary');
       btnAuto.classList.remove('primary');
+      btnResult.classList.remove('primary');
       btnServer.classList.remove('primary');
 
       window.scrollTo(0, manualScrollPos);
     }else if(mode==='server'){
       autoScrollPos = window.scrollY;
+      resultScrollPos = window.scrollY;
       manualScrollPos = window.scrollY;
 
       serverDiv.classList.add('active');
       autoDiv.classList.remove('active');
+      resultDiv.classList.remove('active');
       manualDiv.classList.remove('active');
       btnServer.classList.add('primary');
       btnAuto.classList.remove('primary');
+      btnResult.classList.remove('primary');
       btnManual.classList.remove('primary');
 
       window.scrollTo(0, serverScrollPos);
@@ -1052,6 +1383,7 @@ function renderOneResult(idx){
     }
   }
   btnAuto.onclick=()=>switchMode('auto');
+  btnResult.onclick=()=>switchMode('result');
   btnManual.onclick=()=>switchMode('manual');
   btnServer.onclick=()=>switchMode('server');
 
@@ -1486,7 +1818,7 @@ function renderOneResult(idx){
     URL.revokeObjectURL(url);
   }
 
-  // 슬롯의 데이터만 비우기 (슬롯은 유지)
+  // 슬롯의 데이터만 비우기 (슬롯은 유지) - 선택 삭제 방식
   async function clearSlotData(slotId) {
     const slotRef = window.firebaseRef(window.firebaseDB, `slots/${slotId}`);
     const snapshot = await window.firebaseGet(slotRef);
@@ -1510,25 +1842,147 @@ function renderOneResult(idx){
       }
     }
 
-    const dataCount = slot.data ? slot.data.length : 0;
-    if (dataCount === 0) {
-      alert('비울 데이터가 없습니다.');
+    const dataList = slot.data || [];
+    if (dataList.length === 0) {
+      alert('삭제할 데이터가 없습니다.');
       return;
     }
 
-    if (!confirm(`"${slot.name}" 슬롯의 모든 데이터(${dataCount}개)를 삭제하시겠습니까?\n\n⚠️ 이 작업은 되돌릴 수 없습니다.`)) {
-      return;
-    }
+    // 삭제할 데이터 선택 모달 표시
+    showDeleteSelectionModal(slotId, slot.name, dataList);
+  }
 
-    try {
-      const dataRef = window.firebaseRef(window.firebaseDB, `slots/${slotId}/data`);
-      await window.firebaseSet(dataRef, []);
-      alert('슬롯 데이터가 모두 삭제되었습니다.');
-      loadSlotList();
-    } catch (error) {
-      console.error('데이터 삭제 오류:', error);
-      alert('데이터 삭제 중 오류가 발생했습니다.');
-    }
+  // 데이터 선택 삭제 모달
+  function showDeleteSelectionModal(slotId, slotName, dataList) {
+    const modalId = 'deleteSelectionModal';
+
+    // 기존 모달이 있으면 제거
+    const existingModal = document.getElementById(modalId);
+    if (existingModal) existingModal.remove();
+
+    const modalContent = `
+      <div id="${modalId}" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);display:flex;justify-content:center;align-items:center;z-index:9999;padding:20px;box-sizing:border-box;">
+        <div style="background:#fff;border-radius:12px;max-width:800px;width:100%;max-height:80vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 10px 40px rgba(0,0,0,0.3);">
+
+          <!-- 헤더 -->
+          <div style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);color:#fff;padding:20px;display:flex;justify-content:space-between;align-items:center;">
+            <h2 style="margin:0;font-size:20px;">🗑️ "${slotName}" 데이터 선택 삭제</h2>
+            <button onclick="document.getElementById('${modalId}').remove()" style="background:none;border:none;color:#fff;font-size:28px;cursor:pointer;padding:0;width:30px;height:30px;display:flex;align-items:center;justify-content:center;line-height:1;">&times;</button>
+          </div>
+
+          <!-- 안내 메시지 -->
+          <div style="padding:15px 20px;background:#fff3cd;border-bottom:1px solid #ffc107;color:#856404;">
+            <strong>⚠️ 주의:</strong> 선택한 데이터는 영구적으로 삭제됩니다. (총 ${dataList.length}개)
+          </div>
+
+          <!-- 전체 선택 컨트롤 -->
+          <div style="padding:15px 20px;background:#f8f9fa;border-bottom:1px solid #dee2e6;display:flex;justify-content:space-between;align-items:center;">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:bold;">
+              <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll()" style="width:18px;height:18px;cursor:pointer;">
+              <span>전체 선택</span>
+            </label>
+            <span id="selectedCount" style="color:#666;font-size:14px;">선택: 0개</span>
+          </div>
+
+          <!-- 데이터 목록 -->
+          <div id="deleteDataList" style="flex:1;overflow-y:auto;padding:15px 20px;">
+            ${dataList.map((entry, index) => {
+              const timestamp = new Date(entry.timestamp).toLocaleString('ko-KR');
+              const dragonCount = entry.dragons ? entry.dragons.length : 0;
+
+              return `
+                <div style="border:1px solid #ddd;border-radius:8px;padding:12px;margin-bottom:10px;background:#f9f9f9;display:flex;align-items:center;gap:12px;">
+                  <input type="checkbox" class="data-checkbox" data-index="${index}" onchange="updateSelectedCount()" style="width:18px;height:18px;cursor:pointer;flex-shrink:0;">
+                  <div style="flex:1;">
+                    <div style="font-weight:bold;color:#2d6cdf;margin-bottom:4px;">[${index + 1}] ${entry.userName}</div>
+                    <div style="font-size:13px;color:#666;">
+                      <span>📅 ${timestamp}</span>
+                      <span style="margin-left:12px;">🐉 드래곤 ${dragonCount}마리</span>
+                    </div>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+
+          <!-- 하단 버튼 -->
+          <div style="padding:15px 20px;background:#f8f9fa;border-top:1px solid #dee2e6;display:flex;gap:10px;justify-content:flex-end;">
+            <button onclick="document.getElementById('${modalId}').remove()" style="padding:10px 20px;background:#6c757d;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:14px;">취소</button>
+            <button onclick="executeDeleteSelected('${slotId}')" style="padding:10px 20px;background:#dc3545;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:14px;font-weight:bold;">선택 항목 삭제</button>
+          </div>
+
+        </div>
+      </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', modalContent);
+
+    // 전체 선택/해제 함수
+    window.toggleSelectAll = function() {
+      const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+      const checkboxes = document.querySelectorAll('.data-checkbox');
+      checkboxes.forEach(cb => cb.checked = selectAllCheckbox.checked);
+      updateSelectedCount();
+    };
+
+    // 선택 개수 업데이트 함수
+    window.updateSelectedCount = function() {
+      const checkboxes = document.querySelectorAll('.data-checkbox');
+      const checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
+      document.getElementById('selectedCount').textContent = `선택: ${checkedCount}개`;
+
+      // 전체 선택 체크박스 상태 업데이트
+      const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+      selectAllCheckbox.checked = checkedCount === checkboxes.length && checkedCount > 0;
+    };
+
+    // 선택 항목 삭제 실행 함수
+    window.executeDeleteSelected = async function(slotId) {
+      const checkboxes = document.querySelectorAll('.data-checkbox:checked');
+
+      if (checkboxes.length === 0) {
+        alert('삭제할 항목을 선택해주세요.');
+        return;
+      }
+
+      const selectedIndices = Array.from(checkboxes).map(cb => parseInt(cb.dataset.index));
+
+      if (!confirm(`선택한 ${selectedIndices.length}개의 데이터를 삭제하시겠습니까?\n\n⚠️ 이 작업은 되돌릴 수 없습니다.`)) {
+        return;
+      }
+
+      try {
+        // 슬롯 데이터 다시 가져오기
+        const slotRef = window.firebaseRef(window.firebaseDB, `slots/${slotId}`);
+        const snapshot = await window.firebaseGet(slotRef);
+
+        if (!snapshot.exists()) {
+          alert('슬롯을 찾을 수 없습니다.');
+          return;
+        }
+
+        const slot = snapshot.val();
+        const currentData = slot.data || [];
+
+        // 선택되지 않은 항목만 남기기 (인덱스 역순으로 정렬하여 안전하게 삭제)
+        const newData = currentData.filter((_, index) => !selectedIndices.includes(index));
+
+        // Firebase 업데이트
+        const dataRef = window.firebaseRef(window.firebaseDB, `slots/${slotId}/data`);
+        await window.firebaseSet(dataRef, newData);
+
+        alert(`${selectedIndices.length}개의 데이터가 삭제되었습니다.`);
+
+        // 모달 닫기
+        document.getElementById('deleteSelectionModal').remove();
+
+        // 슬롯 목록 새로고침
+        loadSlotList();
+      } catch (error) {
+        console.error('데이터 삭제 오류:', error);
+        alert('데이터 삭제 중 오류가 발생했습니다.');
+      }
+    };
   }
 
   // 슬롯 완전 삭제
@@ -1691,6 +2145,12 @@ function renderOneResult(idx){
         return;
       }
     }
+
+    // Helper 함수: 입력값 가져오기
+    const num = (id) => {
+      const el = document.getElementById(id);
+      return el ? Number(el.value || 0) : 0;
+    };
 
     // 드래곤 3마리 데이터 수집
     const dragons = [];
