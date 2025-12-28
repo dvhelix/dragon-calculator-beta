@@ -284,7 +284,7 @@
       <button class="btn primary" type="button" onclick="calcAuto()">계산하기</button>
       <button class="btn" type="button" onclick="downloadTxt()">저장하기 (.txt)</button>
       <button class="btn" type="button" onclick="clearAllResults()" style="background:#ff9800;color:#fff;border-color:#ff9800;">예측기 결과 초기화</button>
-      <button class="btn" type="button" onclick="resetAllSettings()" style="background:#ff6b6b;color:#fff;border-color:#ff6b6b;">설정 초기화</button>
+      <button class="btn" type="button" onclick="resetFavorites()" style="background:#ff6b6b;color:#fff;border-color:#ff6b6b;">즐겨찾기 초기화</button>
     </div>
 
     <h3>결과</h3>
@@ -313,7 +313,7 @@
       <button class="btn primary" onclick="manualCalcAll()">수동 계산</button>
       <button class="btn" onclick="savePngAll()">결과를 PNG로 저장</button>
       <button class="btn" onclick="saveToServer()" style="background:#00aa88;color:#fff;border-color:#00aa88">서버에 저장</button>
-      <button class="btn" type="button" onclick="resetAllSettings()" style="background:#ff6b6b;color:#fff;border-color:#ff6b6b;">설정 초기화</button>
+      <button class="btn" type="button" onclick="resetFavorites()" style="background:#ff6b6b;color:#fff;border-color:#ff6b6b;">즐겨찾기 초기화</button>
     </div>
 
     <!-- 결과 시트 (가로 비교) -->
@@ -387,14 +387,21 @@
   </script>
 
   <script>
+  // ===== 데이터 구조 정의 =====
   class Stats{constructor(hp,atk,df){this.hp=hp;this.atk=atk;this.df=df;}}
+
+  // 드래곤 기본 스탯 (등급별/타입별)
   const dragon={
    "7.0":{공격형:new Stats(876,285,161),방어형:new Stats(788,185,283),체력형:new Stats(1252,176,176),공방형:new Stats(720,242,243),체공형:new Stats(1080,262,133),체방형:new Stats(1080,133,262)},
    "8.0":{공격형:new Stats(876,305,161),방어형:new Stats(788,185,303),체력형:new Stats(1332,176,176),공방형:new Stats(720,252,253),체공형:new Stats(1120,272,133),체방형:new Stats(1120,133,272)},
    "9.0":{공격형:new Stats(876,325,161),방어형:new Stats(788,185,323),체력형:new Stats(1412,176,176),공방형:new Stats(720,262,263),체공형:new Stats(1160,282,133),체방형:new Stats(1160,133,282)}
   };
+
+  // ===== 핵심 계산 함수 =====
   function eVal(s){return s.hp+4*s.atk+4*s.df;}
   function bVal(s){return s.hp*s.atk*s.df;}
+
+  // 최종 스탯 계산 (모든 보너스 적용)
   function calcPredict(base,gem,pot,acc,pend,spf,spp,spe,col,bf,db){
     const s1=new Stats(base.hp+gem.hp+pot.hp, base.atk+gem.atk+pot.atk, base.df+gem.df+pot.df);
     const s2=new Stats(Math.floor(s1.hp*(1+acc.hp)), Math.floor(s1.atk*(1+acc.atk)), Math.floor(s1.df*(1+acc.df)));
@@ -411,9 +418,12 @@
     );
     return [f, eVal(f), bVal(f)];
   }
-  // 헬퍼 함수: 입력값 가져오기
+
+  // ===== 유틸리티 함수 =====
+  // 입력값 가져오기
   function val(id){ return Number(document.getElementById(id)?.value||0); }
 
+  // 정령/버프/디버프 초기화
   function resetSpiritBuffs(){
     ['sf_hp','sf_atk','sf_df','sp_hp','sp_atk','sp_df','se_hp','se_atk','se_df','bf_hp','bf_atk','bf_df','db_hp','db_atk','db_df'].forEach(id=>{
       const el=document.getElementById(id);
@@ -431,157 +441,27 @@
     alert(`드래곤 ${dragonIdx}에 정령/버프/디버프 값이 적용되었습니다.`);
   }
 
-  // ===== LocalStorage 자동 저장/복원 시스템 =====
-  function saveSettings(){
-    try {
-      const settings = {
-        // 등급
-        level: document.querySelector('input[name="level"]:checked')?.value || '9.0',
-
-        // 드래곤 타입
-        dragonTypes: Array.from(document.querySelectorAll('.dtype'))
-          .filter(cb => cb.checked)
-          .map(cb => cb.value),
-
-        // 젬 기본값
-        gemHp: document.querySelector('input[name="gem_hp"]:checked')?.value || '160',
-        gemAtk: document.querySelector('input[name="gem_atk"]:checked')?.value || '40',
-        gemDf: document.querySelector('input[name="gem_df"]:checked')?.value || '40',
-
-        // 펜던트 설정
-        pendantVer: document.querySelector('input[name="pendant_ver"]:checked')?.value || 'v1',
-        pendantMode: document.querySelector('input[name="pendant_mode"]:checked')?.value || '달',
-        pendantValue: document.getElementById('pendant_value')?.value || '12',
-        pendantStats: Array.from(document.querySelectorAll('.pendStat'))
-          .filter(cb => cb.checked)
-          .map(cb => cb.value),
-
-        // 정령/버프/디버프
-        spirit: {
-          sf_hp: val('sf_hp'), sf_atk: val('sf_atk'), sf_df: val('sf_df'),
-          sp_hp: val('sp_hp'), sp_atk: val('sp_atk'), sp_df: val('sp_df'),
-          se_hp: val('se_hp'), se_atk: val('se_atk'), se_df: val('se_df'),
-          bf_hp: val('bf_hp'), bf_atk: val('bf_atk'), bf_df: val('bf_df'),
-          db_hp: val('db_hp'), db_atk: val('db_atk'), db_df: val('db_df')
-        },
-
-        // Top N
-        topN: document.getElementById('top_n')?.value || '5',
-
-        // 저장 시간
-        savedAt: new Date().toISOString()
-      };
-
-      localStorage.setItem('dragonCalcSettings', JSON.stringify(settings));
-      console.log('✅ 설정 자동 저장 완료');
-    } catch (e) {
-      console.error('설정 저장 실패:', e);
-    }
-  }
-
-  function loadSettings(){
-    try {
-      const saved = localStorage.getItem('dragonCalcSettings');
-      if (!saved) return;
-
-      const settings = JSON.parse(saved);
-
-      // 등급 복원
-      const levelRadio = document.querySelector(`input[name="level"][value="${settings.level}"]`);
-      if (levelRadio) levelRadio.checked = true;
-
-      // 드래곤 타입 복원
-      document.querySelectorAll('.dtype').forEach(cb => {
-        cb.checked = settings.dragonTypes?.includes(cb.value) || false;
-      });
-
-      // 젬 기본값 복원
-      const gemHpRadio = document.querySelector(`input[name="gem_hp"][value="${settings.gemHp}"]`);
-      if (gemHpRadio) gemHpRadio.checked = true;
-      const gemAtkRadio = document.querySelector(`input[name="gem_atk"][value="${settings.gemAtk}"]`);
-      if (gemAtkRadio) gemAtkRadio.checked = true;
-      const gemDfRadio = document.querySelector(`input[name="gem_df"][value="${settings.gemDf}"]`);
-      if (gemDfRadio) gemDfRadio.checked = true;
-
-      // 펜던트 설정 복원
-      const pendantVerRadio = document.querySelector(`input[name="pendant_ver"][value="${settings.pendantVer}"]`);
-      if (pendantVerRadio) {
-        pendantVerRadio.checked = true;
-        pendantVerRadio.dispatchEvent(new Event('change'));
-      }
-      const pendantModeRadio = document.querySelector(`input[name="pendant_mode"][value="${settings.pendantMode}"]`);
-      if (pendantModeRadio) pendantModeRadio.checked = true;
-      const pendantValueInput = document.getElementById('pendant_value');
-      if (pendantValueInput) pendantValueInput.value = settings.pendantValue;
-
-      document.querySelectorAll('.pendStat').forEach(cb => {
-        cb.checked = settings.pendantStats?.includes(cb.value) || false;
-      });
-
-      // 정령/버프/디버프 복원
-      if (settings.spirit) {
-        Object.keys(settings.spirit).forEach(key => {
-          const el = document.getElementById(key);
-          if (el) el.value = settings.spirit[key];
-        });
-      }
-
-      // Top N 복원
-      const topNInput = document.getElementById('top_n');
-      if (topNInput) topNInput.value = settings.topN;
-
-      console.log('✅ 설정 복원 완료 (저장 시간:', settings.savedAt, ')');
-    } catch (e) {
-      console.error('설정 복원 실패:', e);
-    }
-  }
-
-  // 자동 저장 활성화
-  function enableAutoSave(){
-    // 모든 입력 요소에 자동 저장 이벤트 연결
-    document.querySelectorAll('input[name="level"], .dtype, input[name="gem_hp"], input[name="gem_atk"], input[name="gem_df"], input[name="pendant_ver"], input[name="pendant_mode"], .pendStat').forEach(el => {
-      el.addEventListener('change', saveSettings);
-    });
-
-    // 숫자 입력 필드는 debounce 적용 (1초 후 저장)
-    let saveTimeout;
-    document.querySelectorAll('#pendant_value, #top_n, #sf_hp, #sf_atk, #sf_df, #sp_hp, #sp_atk, #sp_df, #se_hp, #se_atk, #se_df, #bf_hp, #bf_atk, #bf_df, #db_hp, #db_atk, #db_df').forEach(el => {
-      el.addEventListener('input', () => {
-        clearTimeout(saveTimeout);
-        saveTimeout = setTimeout(saveSettings, 1000);
-      });
-    });
-  }
-
-  // 모든 설정 초기화
-  function resetAllSettings() {
+  // ===== 장신구 즐겨찾기 관리 =====
+  function resetFavorites() {
     const confirmed = confirm(
-      '모든 저장된 설정을 초기화하시겠습니까?\n\n' +
-      '초기화되는 내용:\n' +
-      '- 등급, 드래곤 타입\n' +
-      '- 젬 기본값\n' +
-      '- 펜던트 설정\n' +
-      '- 정령/버프/디버프 값\n' +
-      '- 장신구 즐겨찾기\n' +
-      '- Top N 설정\n\n' +
+      '장신구 즐겨찾기를 초기화하시겠습니까?\n\n' +
       '※ 이 작업은 되돌릴 수 없습니다.'
     );
 
     if (confirmed) {
       try {
-        // LocalStorage에서 모든 설정 삭제
-        localStorage.removeItem('dragonCalcSettings');
         localStorage.removeItem('accFavorites');
-
-        alert('모든 설정이 초기화되었습니다.\n페이지를 새로고침합니다.');
+        alert('즐겨찾기가 초기화되었습니다.\n페이지를 새로고침합니다.');
         location.reload();
       } catch (e) {
-        console.error('설정 초기화 실패:', e);
-        alert('설정 초기화 중 오류가 발생했습니다.');
+        console.error('즐겨찾기 초기화 실패:', e);
+        alert('초기화 중 오류가 발생했습니다.');
       }
     }
   }
 
+  // ===== 장신구 데이터 테이블 =====
+  // 형식: [이름, 레벨, HP%, ATK%, DEF%]
   const ACC_TABLE = [ ["악보(체)",20,20,0,0], ["여보(방)",20,0,0,20], ["황보(공)",20,0,20,0], ["바뿔(공/방)",20,0,10,10], ["바뿔(체/방)",20,10,0,10], ["바뿔(체/공)",20,10,10,0],
     ["바뿔(공/방)",19,0,10,9],["바뿔(체/방)",19,10,0,9],["바뿔(공/체)",19,9,10,0],
     ["불뿔(공/체)",19,6,13,0],["불뿔(공/방)",19,0,13,6],
@@ -599,9 +479,11 @@
     ["대뿔(방/공)",17,0,6,11],["대뿔(방/체)",17,6,0,11],
     ["여보",17,0,0,17],["황보",17,0,17,0],["악보",17,17,0,0],
   ];
+
+  // 전역 변수
   let accCheckboxes = [];
-  let accFavorites = new Set();  // 즐겨찾기 장신구 ID 저장
-  let showOnlyFavorites = false; // 즐겨찾기 필터 상태
+  let accFavorites = new Set();
+  let showOnlyFavorites = false;
 
   // 즐겨찾기 불러오기
   function loadFavorites() {
@@ -716,14 +598,9 @@
   window.addEventListener("DOMContentLoaded", () => {
     // 펜던트 버전 UI 초기화
     document.querySelector('input[name="pendant_ver"]:checked')?.dispatchEvent(new Event('change'));
-
-    // 저장된 설정 복원
-    loadSettings();
-
-    // 자동 저장 활성화
-    enableAutoSave();
   });
 
+  // ===== 펜던트 조합 생성 =====
   function genPend(total, mode, selectedStats = ["HP","ATK","DEF"]) {
     const MAX = 6;
     const combos = [];
@@ -779,6 +656,7 @@
     return [[[0,0,0]]];
   }
 
+  // ===== 자동 계산기 =====
   function calcAuto(){
     const resultBox = document.getElementById("autoResult");
     resultBox.innerHTML = '<div style="text-align:center;padding:40px;color:#666;"><div style="font-weight:700;margin-bottom:10px;">계산 중입니다...</div><small style="color:#999;">조합이 많을 경우 시간이 걸릴 수 있습니다.</small></div>';
@@ -969,7 +847,7 @@
     resultStorage.textContent = resultStorage.textContent + separator + topResults;
   }
 
-  // 예측기 결과 탭 전체 삭제
+  // ===== 예측기 결과 관리 =====
   function clearAllResults() {
     if (confirm('예측기 결과 탭의 모든 결과를 삭제하시겠습니까?')) {
       document.getElementById("resultStorage").textContent = "";
@@ -977,7 +855,6 @@
     }
   }
 
-  // 예측기 결과 탭 전체 저장
   function downloadAllResults() {
     const text = document.getElementById("resultStorage").textContent || "";
     if (!text.trim()) {
@@ -1207,6 +1084,7 @@ function renderOneResult(idx){
   const num = val;  // 별칭 (자동 계산기와 수동 계산기 모두 사용)
   function setText(id, v){ const el=document.getElementById(id); if(el) el.textContent=v; }
 
+  // ===== 수동 계산기 =====
   function manualCalcOne(idx){
     const nm = (document.getElementById(`d${idx}_name`).value||'').trim();
     setText(`d${idx}_name_display`, nm ? nm : `드래곤 ${idx}`);
@@ -1318,6 +1196,7 @@ function renderOneResult(idx){
   let manualScrollPos = 0;
   let serverScrollPos = 0;
 
+  // ===== UI 모드 전환 =====
   function switchMode(mode){
     if(mode==='auto'){
       resultScrollPos = window.scrollY;
@@ -1395,7 +1274,8 @@ function renderOneResult(idx){
     });
   });
 
-  // 간단한 비밀번호 해싱 (SHA-256)
+  // ===== Firebase 서버 관리 =====
+  // 비밀번호 해싱 (SHA-256)
   async function hashPassword(password) {
     const encoder = new TextEncoder();
     const data = encoder.encode(password);
@@ -1558,37 +1438,6 @@ function renderOneResult(idx){
     setTimeout(() => window.renderDetailView(dataList), 0);
   }
 
-  // 드래곤 스탯 계산 (중복 제거용 헬퍼 함수)
-  window.calculateDragonStats = function(dragon) {
-    let gemTotal = {hp: 0, atk: 0, df: 0};
-    dragon.gems.forEach(gem => {
-      if (gem.type === 'HP') gemTotal.hp += gem.value;
-      if (gem.type === 'ATK') gemTotal.atk += gem.value;
-      if (gem.type === 'DEF') gemTotal.df += gem.value;
-    });
-
-    const pot = new Stats(24, 6, 6);
-    const col = new Stats(240, 60, 60);
-    const gem = new Stats(gemTotal.hp, gemTotal.atk, gemTotal.df);
-    const acc = new Stats(
-      (dragon.accessory.hp + dragon.enchant.hp) / 100,
-      (dragon.accessory.atk + dragon.enchant.atk) / 100,
-      (dragon.accessory.df + dragon.enchant.df) / 100
-    );
-    const pend = new Stats(dragon.pendant.hp / 100, dragon.pendant.atk / 100, dragon.pendant.df / 100);
-    const spf = new Stats(dragon.spirit.flatHp, dragon.spirit.flatAtk, dragon.spirit.flatDf);
-    const spp = new Stats(dragon.spirit.pctHp / 100, dragon.spirit.pctAtk / 100, dragon.spirit.pctDf / 100);
-    const spe = new Stats(dragon.spirit.extraHp, dragon.spirit.extraAtk, dragon.spirit.extraDf);
-    const bf = new Stats(dragon.buff.hp / 100, dragon.buff.atk / 100, dragon.buff.df / 100);
-    const db = new Stats(dragon.debuff.hp / 100, dragon.debuff.atk / 100, dragon.debuff.df / 100);
-
-    const base = window.dragon && window.dragon[dragon.level] && window.dragon[dragon.level][dragon.type]
-      ? window.dragon[dragon.level][dragon.type]
-      : new Stats(1160, 282, 133);
-
-    return calcPredict(base, gem, pot, acc, pend, spf, spp, spe, col, bf, db);
-  }
-
   // 열람 모달 닫기
   window.closeViewSlotModal = function() {
     const modal = document.getElementById('viewSlotModal');
@@ -1648,8 +1497,7 @@ function renderOneResult(idx){
 
     dataList.forEach((entry, index) => {
       const bValues = entry.dragons.map(dragon => {
-        const [, , bValue] = window.calculateDragonStats(dragon);
-        return bValue / 1e6;
+        return dragon.bValue || 0;
       });
 
       const total = bValues.reduce((sum, val) => sum + val, 0);
@@ -1721,7 +1569,11 @@ function renderOneResult(idx){
 
       entry.dragons.forEach((dragon, dragonIdx) => {
         const dragonName = dragon.name || `드래곤 ${dragonIdx + 1}`;
-        const [finalStats, eValue, bValue] = window.calculateDragonStats(dragon);
+
+        // 저장된 결과값 사용
+        const finalStats = dragon.finalStats || { hp: 0, atk: 0, df: 0 };
+        const eValue = dragon.eValue || 0;
+        const bValue = dragon.bValue || 0;
 
         entryHtml += `
           <div style="border:1px solid #ccc;border-radius:6px;padding:12px;margin-bottom:10px;background:#fff;">
@@ -1741,38 +1593,17 @@ function renderOneResult(idx){
                 </div>
                 <div style="background:rgba(255,255,255,0.2);padding:6px;border-radius:4px;text-align:center;">
                   <div style="font-size:11px;opacity:0.9;">B-Value (비벨)</div>
-                  <div style="font-size:18px;font-weight:900;">${(bValue/1e6).toFixed(3)}</div>
+                  <div style="font-size:18px;font-weight:900;">${bValue.toFixed(3)}</div>
                 </div>
               </div>
             </div>
 
-            <!-- 입력 스탯 상세 (4개 컬럼으로 그룹화) -->
-            <div style="display:grid !important;grid-template-columns:1fr 1fr 1fr 1fr !important;gap:15px;font-size:13px;">
+            <!-- 기본 정보만 표시 -->
+            <div style="display:grid !important;grid-template-columns:1fr 1fr !important;gap:15px;font-size:13px;">
 
-              <!-- 1그룹: 기본 정보 -->
+              <!-- 기본 정보 -->
               <div style="display:flex !important;flex-direction:column !important;gap:10px;">
                 <div><strong>등급/타입:</strong><br>${dragon.level} / ${dragon.type}</div>
-                <div><strong>젬 구성:</strong><br>${dragon.gems.map((gem, i) => gem.type ? `젬${i+1}: ${gem.type} ${gem.value}` : `젬${i+1}: 없음`).join('<br>')}</div>
-              </div>
-
-              <!-- 2그룹: 장비 옵션 -->
-              <div style="display:flex !important;flex-direction:column !important;gap:10px;">
-                <div><strong>장신구 (%):</strong><br>HP ${dragon.accessory.hp}% / ATK ${dragon.accessory.atk}% / DEF ${dragon.accessory.df}%</div>
-                <div><strong>인챈트 (%):</strong><br>HP ${dragon.enchant.hp}% / ATK ${dragon.enchant.atk}% / DEF ${dragon.enchant.df}%</div>
-                <div><strong>펜던트 (%):</strong><br>HP ${dragon.pendant.hp}% / ATK ${dragon.pendant.atk}% / DEF ${dragon.pendant.df}%</div>
-              </div>
-
-              <!-- 3그룹: 정령 옵션 -->
-              <div style="display:flex !important;flex-direction:column !important;gap:10px;">
-                <div><strong>정령 플옵:</strong><br>HP ${dragon.spirit.flatHp} / ATK ${dragon.spirit.flatAtk} / DEF ${dragon.spirit.flatDf}</div>
-                <div><strong>정령 퍼옵 (%):</strong><br>HP ${dragon.spirit.pctHp}% / ATK ${dragon.spirit.pctAtk}% / DEF ${dragon.spirit.pctDf}%</div>
-                <div><strong>정령 부가옵:</strong><br>HP ${dragon.spirit.extraHp} / ATK ${dragon.spirit.extraAtk} / DEF ${dragon.spirit.extraDf}</div>
-              </div>
-
-              <!-- 4그룹: 버프/디버프 -->
-              <div style="display:flex !important;flex-direction:column !important;gap:10px;">
-                <div><strong>버프 (%):</strong><br>HP ${dragon.buff.hp}% / ATK ${dragon.buff.atk}% / DEF ${dragon.buff.df}%</div>
-                <div><strong>디버프 (%):</strong><br>HP ${dragon.debuff.hp}% / ATK ${dragon.debuff.atk}% / DEF ${dragon.debuff.df}%</div>
               </div>
 
             </div>
@@ -1800,8 +1631,7 @@ function renderOneResult(idx){
     // CSV 데이터
     dataList.forEach(entry => {
       const bValues = entry.dragons.map(dragon => {
-        const [, , bValue] = window.calculateDragonStats(dragon);
-        return bValue / 1e6;
+        return dragon.bValue || 0;
       });
       const total = bValues.reduce((sum, val) => sum + val, 0);
       csv += `${entry.userName},${bValues[0].toFixed(3)},${bValues[1].toFixed(3)},${bValues[2].toFixed(3)},${total.toFixed(3)}\n`;
@@ -2043,7 +1873,7 @@ function renderOneResult(idx){
 
   // 수동계산기 데이터를 서버에 저장
   async function saveToServer() {
-    // 1. 슬롯 목록 먼저 가져오기
+    // 슬롯 목록 먼저 가져오기
     const slotsRef = window.firebaseRef(window.firebaseDB, 'slots');
     const snapshot = await window.firebaseGet(slotsRef);
 
@@ -2146,64 +1976,35 @@ function renderOneResult(idx){
       }
     }
 
-    // Helper 함수: 입력값 가져오기
-    const num = (id) => {
+    // Helper 함수: 텍스트 값 가져오기
+    const getText = (id) => {
       const el = document.getElementById(id);
-      return el ? Number(el.value || 0) : 0;
+      return el ? el.textContent.trim() : '';
     };
 
-    // 드래곤 3마리 데이터 수집
+    // Helper 함수: 숫자 값 가져오기
+    const getNum = (id) => {
+      const el = document.getElementById(id);
+      const text = el ? el.textContent.trim() : '0';
+      return Number(text.replace(/,/g, '')) || 0;
+    };
+
+    // 드래곤 3마리 계산된 결과값 수집
     const dragons = [];
     for (let i = 1; i <= 3; i++) {
       const dragonData = {
         name: document.getElementById(`d${i}_name`)?.value || '',
         level: document.getElementById(`d${i}_m_level`)?.value || '9.0',
         type: document.getElementById(`d${i}_m_type`)?.value || '공격형',
-        gems: [],
-        accessory: {
-          hp: num(`d${i}_m_acc_hp`),
-          atk: num(`d${i}_m_acc_atk`),
-          df: num(`d${i}_m_acc_df`)
+        // 계산된 최종 결과값
+        finalStats: {
+          hp: getNum(`d${i}_c_fin_hp`),
+          atk: getNum(`d${i}_c_fin_atk`),
+          df: getNum(`d${i}_c_fin_df`)
         },
-        enchant: {
-          hp: num(`d${i}_m_ench_hp`),
-          atk: num(`d${i}_m_ench_atk`),
-          df: num(`d${i}_m_ench_df`)
-        },
-        pendant: {
-          hp: num(`d${i}_m_pend_hp`),
-          atk: num(`d${i}_m_pend_atk`),
-          df: num(`d${i}_m_pend_df`)
-        },
-        spirit: {
-          flatHp: num(`d${i}_sf_hp`),
-          flatAtk: num(`d${i}_sf_atk`),
-          flatDf: num(`d${i}_sf_df`),
-          pctHp: num(`d${i}_sp_hp`),
-          pctAtk: num(`d${i}_sp_atk`),
-          pctDf: num(`d${i}_sp_df`),
-          extraHp: num(`d${i}_se_hp`),
-          extraAtk: num(`d${i}_se_atk`),
-          extraDf: num(`d${i}_se_df`)
-        },
-        buff: {
-          hp: num(`d${i}_bf_hp`),
-          atk: num(`d${i}_bf_atk`),
-          df: num(`d${i}_bf_df`)
-        },
-        debuff: {
-          hp: num(`d${i}_db_hp`),
-          atk: num(`d${i}_db_atk`),
-          df: num(`d${i}_db_df`)
-        }
+        eValue: getNum(`d${i}_c_eval`),
+        bValue: parseFloat(getText(`d${i}_c_bval`))
       };
-
-      // 젬 데이터 수집
-      for (let j = 1; j <= 5; j++) {
-        const type = document.getElementById(`d${i}_slot_type_${j}`)?.value || '';
-        const value = document.getElementById(`d${i}_slot_val_${j}`)?.value || '0';
-        dragonData.gems.push({type, value: parseInt(value)});
-      }
 
       dragons.push(dragonData);
     }
