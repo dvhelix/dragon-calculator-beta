@@ -14,7 +14,7 @@
     --shadow:0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
     --shadow-md:0 4px 6px rgba(0,0,0,0.1), 0 2px 4px rgba(0,0,0,0.06);
   }
-  body{font-family:system-ui,-apple-system,"Noto Sans KR",sans-serif;margin:24px;background:var(--bg);color:var(--ink);line-height:1.5}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Malgun Gothic","맑은 고딕","Noto Sans KR","Apple SD Gothic Neo","Helvetica Neue",sans-serif;margin:24px;background:var(--bg);color:var(--ink);line-height:1.5}
   h2{margin:0 0 8px;font-weight:700;color:var(--ink)}
   .hint{color:#6b7280;margin-bottom:14px}
   .small{color:#9ca3af;font-size:12px}
@@ -412,7 +412,7 @@
         <div class="toolbar" style="flex-direction:column;">
           <button class="btn primary" type="button" onclick="calcAuto()" style="width:100%;font-size:16px;padding:12px;">계산하기</button>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
-            <button class="btn" type="button" onclick="downloadTxt()">저장</button>
+            <button class="btn" type="button" onclick="downloadTxt()">Excel 저장</button>
             <button class="btn" type="button" onclick="clearAllResults()" style="background:#ff9800;color:#fff;border-color:#ff9800;">초기화</button>
             <button class="btn" type="button" onclick="resetFavorites()" style="background:#ff6b6b;color:#fff;border-color:#ff6b6b;">즐겨찾기 초기화</button>
           </div>
@@ -481,6 +481,12 @@
       </div>
     </div>
 
+    <!-- 결과 드래곤 선택 (4마리 이상일 때만 표시) -->
+    <div id="dragonSelectPanel" style="display:none;margin-top:20px;padding:15px;background:#fff3e0;border-radius:8px;border:1px solid #ffcc80;">
+      <div style="font-weight:bold;margin-bottom:10px;color:#e65100;">📋 결과에 표시할 드래곤 선택 (최대 3개)</div>
+      <div id="dragonSelectCheckboxes" style="display:flex;gap:12px;flex-wrap:wrap;"></div>
+    </div>
+
     <!-- 결과 시트 (가로 비교) -->
     <div class="results-wrap" style="margin-top:20px;">
       <div id="allResults" class="results-row"></div>
@@ -523,6 +529,9 @@
 
   <!-- html2canvas -->
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+  <!-- SheetJS (Excel 파일 생성) -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <!-- Firebase -->
   <script type="module">
@@ -1464,15 +1473,12 @@
 
     // 결과 패널 생성
     let panelsHtml = '';
-    let outputText = '순위\t타입\t장신구\t젬\t펜던트\t인첸트\tHP\tATK\tDEF\tE\tB\n';
 
     allResults.forEach((dragonResult, dragonIdx) => {
       panelsHtml += `<div class="dragon-settings-panel ${dragonIdx === 0 ? 'active' : ''}" id="resultPanel_${dragonIdx}">`;
       panelsHtml += `<div style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);color:#fff;padding:10px 15px;border-radius:8px 8px 0 0;font-weight:bold;">`;
       panelsHtml += `★ 드래곤 ${dragonResult.dragonNumber} (${dragonResult.dragonGrade} / ${dragonResult.dragonType})`;
       panelsHtml += `</div>`;
-
-      outputText += `\n[드래곤 ${dragonResult.dragonNumber}] ${dragonResult.dragonGrade} / ${dragonResult.dragonType}\n`;
 
       dragonResult.results.forEach((r, i) => {
         panelsHtml += `
@@ -1487,27 +1493,12 @@
             </div>
           </div>
         `;
-
-        outputText += `${i + 1}\t${r.dragonType}\t${r.accessory}\t${r.gems}\t${r.pendant}\t${r.enchant}\t${r.finalStats.hp}\t${r.finalStats.atk}\t${r.finalStats.df}\t${r.eValue.toFixed(0)}\t${(r.B/1e6).toFixed(3)}\n`;
       });
 
       panelsHtml += `</div>`;
     });
 
     resultBox.innerHTML = tabsHtml + panelsHtml;
-
-    // 예측기 결과 탭에 자동 저장 (텍스트 형식)
-    const resultStorage = document.getElementById("resultStorage");
-    const timestamp = new Date().toLocaleString('ko-KR', {
-      year: 'numeric', month: '2-digit', day: '2-digit',
-      hour: '2-digit', minute: '2-digit', second: '2-digit'
-    });
-
-    const separator = resultStorage.textContent.trim() ?
-      `\n\n${'='.repeat(80)}\n[${timestamp}] 새로운 계산 결과\n${'='.repeat(80)}\n\n` :
-      `[${timestamp}] 계산 결과\n${'='.repeat(80)}\n\n`;
-
-    resultStorage.textContent = resultStorage.textContent + separator + outputText;
   }
 
   // 결과 탭 전환
@@ -1536,11 +1527,18 @@
     // 수동계산기의 해당 드래곤 인덱스 (1-based)
     const manualIdx = dragonResult.dragonNumber;
 
-    // 수동계산기에 드래곤이 있는지 확인
-    if (ManualDragonState.dragons.length < manualIdx) {
-      alert(`수동계산기에 드래곤 ${manualIdx}이(가) 없습니다. 먼저 드래곤을 추가해주세요.`);
-      return;
+    // 수동계산기에 드래곤이 없으면 자동 추가
+    while (ManualDragonState.dragons.length < manualIdx) {
+      if (ManualDragonState.dragons.length >= ManualDragonState.maxDragons) {
+        alert(`최대 ${ManualDragonState.maxDragons}마리까지만 추가할 수 있습니다.`);
+        return;
+      }
+      const newDragon = new ManualDragonConfig(ManualDragonState.nextId++, dragonResult.dragonGrade, dragonResult.dragonType);
+      newDragon.displayNumber = ManualDragonState.dragons.length + 1;
+      ManualDragonState.dragons.push(newDragon);
     }
+    renderAllManual();
+    updateManualDragonCount();
 
     // 등급/타입 적용
     const levelEl = document.getElementById(`d${manualIdx}_m_level`);
@@ -1798,7 +1796,6 @@
       <div style="font-size:13px;color:#666;margin-top:4px;">드래곤들에게 장신구를 최적 배분합니다.</div>
     </div>`;
 
-    let outputText = `=== Optimize 모드 ===\n드래곤\t타입\t장신구\t젬\t펜던트\t인첸트\tHP\tATK\tDEF\tE\tB\n`;
     let totalB = 0;
 
     assignments.forEach((assign, idx) => {
@@ -1821,64 +1818,87 @@
           </div>
         </div>
       </div>`;
-
-      outputText += `${r.dragonNumber}\t${r.dragonType}\t${r.accessory}\t${r.gems}\t${r.pendant}\t${r.enchant}\t${r.finalStats.hp}\t${r.finalStats.atk}\t${r.finalStats.df}\t${r.eValue.toFixed(0)}\t${(r.B/1e6).toFixed(3)}\n`;
     });
 
     outputHtml += `<div style="background:#e8f5e9;padding:15px;border-radius:8px;margin-top:10px;text-align:center;">
       <strong style="color:#2e7d32;font-size:18px;">총 B-Value 합계: ${(totalB/1e6).toFixed(3)}</strong>
     </div>`;
 
-    outputText += `\n총 B-Value 합계: ${(totalB/1e6).toFixed(3)}\n`;
-
     resultBox.innerHTML = outputHtml;
-
-    // 예측기 결과 탭에 저장
-    const resultStorage = document.getElementById("resultStorage");
-    const timestamp = new Date().toLocaleString('ko-KR', {
-      year: 'numeric', month: '2-digit', day: '2-digit',
-      hour: '2-digit', minute: '2-digit', second: '2-digit'
-    });
-    const separator = resultStorage.textContent.trim() ?
-      `\n\n${'='.repeat(80)}\n[${timestamp}] 새로운 계산 결과 (Optimize 모드)\n${'='.repeat(80)}\n\n` :
-      `[${timestamp}] 계산 결과 (Optimize 모드)\n${'='.repeat(80)}\n\n`;
-    resultStorage.textContent = resultStorage.textContent + separator + outputText;
   }
 
-  // ===== 예측기 결과 관리 =====
+  // ===== 결과 관리 =====
   function clearAllResults() {
-    if (confirm('예측기 결과 탭의 모든 결과를 삭제하시겠습니까?')) {
-      document.getElementById("resultStorage").textContent = "";
-      alert("전체 결과가 삭제되었습니다.");
+    if (confirm('계산 결과를 초기화하시겠습니까?')) {
+      window._lastAutoResults = null;
+      document.getElementById("autoResult").innerHTML = '';
+      alert("결과가 초기화되었습니다.");
     }
-  }
-
-  function downloadAllResults() {
-    const text = document.getElementById("resultStorage").textContent || "";
-    if (!text.trim()) {
-      alert("저장할 결과가 없습니다.");
-      return;
-    }
-    const blob = new Blob([text], {type: "text/tab-separated-values;charset=utf-8"});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "dragon_results_all.tsv";
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
   }
 
   function downloadTxt(){
-    const text=document.getElementById("autoResult").textContent||"";
-    if(!text.trim()) return;
-    const blob=new Blob([text],{type:"text/tab-separated-values;charset=utf-8"});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement("a");
-    a.href=url; a.download="dragon_result.tsv";
-    document.body.appendChild(a); a.click(); a.remove();
-    URL.revokeObjectURL(url);
+    // 계산 결과 확인
+    if (!window._lastAutoResults || window._lastAutoResults.length === 0) {
+      alert("저장할 결과가 없습니다. 먼저 계산을 실행해주세요.");
+      return;
+    }
+
+    // Excel 워크북 생성
+    const wb = XLSX.utils.book_new();
+
+    // 각 드래곤별로 시트 생성
+    window._lastAutoResults.forEach((dragonResult) => {
+      // 시트 데이터 준비
+      const sheetData = [];
+
+      // 헤더 행
+      sheetData.push(['순위', '타입', '장신구', '젬', '펜던트', '인첸트', 'HP', 'ATK', 'DEF', 'E', 'B']);
+
+      // 드래곤 정보 행
+      sheetData.push([`${dragonResult.dragonGrade} / ${dragonResult.dragonType}`, '', '', '', '', '', '', '', '', '', '']);
+
+      // 결과 데이터 행
+      dragonResult.results.forEach((r, i) => {
+        sheetData.push([
+          i + 1,
+          r.dragonType,
+          r.accessory,
+          r.gems,
+          r.pendant,
+          r.enchant,
+          r.finalStats.hp,
+          r.finalStats.atk,
+          r.finalStats.df,
+          Math.round(r.eValue),
+          (r.B / 1e6).toFixed(3)
+        ]);
+      });
+
+      // 시트 생성 및 워크북에 추가
+      const ws = XLSX.utils.aoa_to_sheet(sheetData);
+
+      // 열 너비 설정
+      ws['!cols'] = [
+        { wch: 6 },   // 순위
+        { wch: 10 },  // 타입
+        { wch: 18 },  // 장신구
+        { wch: 15 },  // 젬
+        { wch: 20 },  // 펜던트
+        { wch: 12 },  // 인첸트
+        { wch: 8 },   // HP
+        { wch: 8 },   // ATK
+        { wch: 8 },   // DEF
+        { wch: 8 },   // E
+        { wch: 10 }   // B
+      ];
+
+      // 시트 이름 (드래곤 번호)
+      const sheetName = `드래곤${dragonResult.dragonNumber}`;
+      XLSX.utils.book_append_sheet(wb, ws, sheetName);
+    });
+
+    // Excel 파일 다운로드
+    XLSX.writeFile(wb, 'dragon_result.xlsx');
   }
 
   const gemOptions = {
@@ -1892,7 +1912,8 @@
     dragons: [],
     maxDragons: 9,
     nextId: 1,
-    accessoryAllocation: new Map()
+    accessoryAllocation: new Map(),
+    selectedForResult: new Set()  // 결과에 표시할 드래곤 선택
   };
 
   class ManualDragonConfig {
@@ -1931,6 +1952,7 @@
     if (index === -1) return;
 
     const dragon = ManualDragonState.dragons[index];
+    const oldDisplayNumber = dragon.displayNumber;
 
     // 장신구 해제
     if (dragon.accessoryId) {
@@ -1939,10 +1961,17 @@
 
     ManualDragonState.dragons.splice(index, 1);
 
-    // 리넘버링
+    // 리넘버링 및 selectedForResult 업데이트
+    const wasSelected = ManualDragonState.selectedForResult.has(oldDisplayNumber);
+    ManualDragonState.selectedForResult.clear();
     ManualDragonState.dragons.forEach((d, i) => {
       d.displayNumber = i + 1;
     });
+    // 기본적으로 처음 3개 선택 (또는 모든 드래곤 선택)
+    const selectCount = Math.min(3, ManualDragonState.dragons.length);
+    for (let i = 0; i < selectCount; i++) {
+      ManualDragonState.selectedForResult.add(ManualDragonState.dragons[i].displayNumber);
+    }
 
     renderAllManual();
     updateManualDragonCount();
@@ -1980,6 +2009,7 @@
 
     if (ManualDragonState.dragons.length === 0) {
       inputsWrap.innerHTML = '<p style="color:#999;text-align:center;padding:20px 0;">드래곤을 추가해주세요</p>';
+      updateDragonSelectionPanel();
       return;
     }
 
@@ -1993,11 +2023,81 @@
       tabsContainer.appendChild(tab);
     });
 
-    // 패널 및 결과 시트 생성
+    // 패널 생성
     ManualDragonState.dragons.forEach((dragon, index) => {
       renderOneInputAsPanel(dragon.displayNumber, dragon, index === 0);
-      renderOneResult(dragon.displayNumber);
     });
+
+    // 선택 패널 업데이트 및 결과 시트 생성
+    updateDragonSelectionPanel();
+    renderSelectedResults();
+  }
+
+  // 드래곤 선택 패널 업데이트
+  function updateDragonSelectionPanel() {
+    const panel = document.getElementById('dragonSelectPanel');
+    const checkboxes = document.getElementById('dragonSelectCheckboxes');
+
+    if (!panel || !checkboxes) return;
+
+    // 4마리 이상일 때만 표시
+    if (ManualDragonState.dragons.length < 4) {
+      panel.style.display = 'none';
+      // 3마리 이하면 모두 선택
+      ManualDragonState.selectedForResult.clear();
+      ManualDragonState.dragons.forEach(d => ManualDragonState.selectedForResult.add(d.displayNumber));
+      return;
+    }
+
+    panel.style.display = 'block';
+
+    // 기본 선택: 처음 3개 (아직 선택된 게 없으면)
+    if (ManualDragonState.selectedForResult.size === 0) {
+      ManualDragonState.dragons.slice(0, 3).forEach(d => ManualDragonState.selectedForResult.add(d.displayNumber));
+    }
+
+    // 체크박스 생성
+    checkboxes.innerHTML = ManualDragonState.dragons.map(dragon => {
+      const isChecked = ManualDragonState.selectedForResult.has(dragon.displayNumber);
+      const isDisabled = !isChecked && ManualDragonState.selectedForResult.size >= 3;
+      return `
+        <label style="display:flex;align-items:center;gap:6px;padding:8px 12px;background:${isChecked ? '#e8f5e9' : '#fff'};border:1px solid ${isChecked ? '#4caf50' : '#ddd'};border-radius:6px;cursor:${isDisabled ? 'not-allowed' : 'pointer'};">
+          <input type="checkbox"
+                 ${isChecked ? 'checked' : ''}
+                 ${isDisabled ? 'disabled' : ''}
+                 onchange="toggleDragonSelection(${dragon.displayNumber}, this.checked)">
+          드래곤 ${dragon.displayNumber}
+        </label>
+      `;
+    }).join('');
+  }
+
+  // 드래곤 선택 토글
+  function toggleDragonSelection(displayNumber, isSelected) {
+    if (isSelected) {
+      if (ManualDragonState.selectedForResult.size < 3) {
+        ManualDragonState.selectedForResult.add(displayNumber);
+      }
+    } else {
+      ManualDragonState.selectedForResult.delete(displayNumber);
+    }
+    updateDragonSelectionPanel();
+    renderSelectedResults();
+  }
+
+  // 선택된 드래곤만 결과 시트 생성
+  function renderSelectedResults() {
+    const allResults = document.getElementById('allResults');
+    if (!allResults) return;
+
+    allResults.innerHTML = '';
+
+    // 선택된 드래곤들의 결과 시트 생성 (순서 유지)
+    ManualDragonState.dragons
+      .filter(d => ManualDragonState.selectedForResult.has(d.displayNumber))
+      .forEach(dragon => {
+        renderOneResult(dragon.displayNumber);
+      });
   }
 
   function renderOneInputAsPanel(idx, dragonConfig, isActive) {
@@ -3176,25 +3276,27 @@ function renderOneResult(idx){
       return Number(text.replace(/,/g, '')) || 0;
     };
 
-    // 동적 드래곤 수에 맞게 계산된 결과값 수집
+    // 선택된 드래곤만 계산된 결과값 수집 (4마리 이상일 때는 선택된 것만, 3마리 이하면 모두)
     const dragons = [];
-    ManualDragonState.dragons.forEach(dragon => {
-      const i = dragon.displayNumber;
-      const dragonData = {
-        level: document.getElementById(`d${i}_m_level`)?.value || '9.0',
-        type: document.getElementById(`d${i}_m_type`)?.value || '공격형',
-        // 계산된 최종 결과값
-        finalStats: {
-          hp: getNum(`d${i}_c_fin_hp`),
-          atk: getNum(`d${i}_c_fin_atk`),
-          df: getNum(`d${i}_c_fin_df`)
-        },
-        eValue: getNum(`d${i}_c_eval`),
-        bValue: parseFloat(getText(`d${i}_c_bval`)) || 0
-      };
+    ManualDragonState.dragons
+      .filter(d => ManualDragonState.selectedForResult.has(d.displayNumber))
+      .forEach(dragon => {
+        const i = dragon.displayNumber;
+        const dragonData = {
+          level: document.getElementById(`d${i}_m_level`)?.value || '9.0',
+          type: document.getElementById(`d${i}_m_type`)?.value || '공격형',
+          // 계산된 최종 결과값
+          finalStats: {
+            hp: getNum(`d${i}_c_fin_hp`),
+            atk: getNum(`d${i}_c_fin_atk`),
+            df: getNum(`d${i}_c_fin_df`)
+          },
+          eValue: getNum(`d${i}_c_eval`),
+          bValue: parseFloat(getText(`d${i}_c_bval`)) || 0
+        };
 
-      dragons.push(dragonData);
-    });
+        dragons.push(dragonData);
+      });
 
     // Firebase에 저장
     const saveData = {
