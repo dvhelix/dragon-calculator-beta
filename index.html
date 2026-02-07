@@ -2290,7 +2290,6 @@ function renderOneResult(idx){
   allResults.appendChild(sheet);
 }
 
-  const num = val;  // 별칭 (자동 계산기와 수동 계산기 모두 사용)
   function setText(id, v){ const el=document.getElementById(id); if(el) el.textContent=v; }
 
   // ===== 수동 계산기 =====
@@ -2392,7 +2391,6 @@ function renderOneResult(idx){
     });
   }
 
-  console.log('Initializing tab system...');
   const autoDiv=document.getElementById('autoCalc');
   const resultDiv=document.getElementById('resultCalc');
   const manualDiv=document.getElementById('manualCalc');
@@ -2401,7 +2399,6 @@ function renderOneResult(idx){
   const btnResult=document.getElementById('btnResult');
   const btnManual=document.getElementById('btnManual');
   const btnServer=document.getElementById('btnServer');
-  console.log('Elements found:', { autoDiv: !!autoDiv, resultDiv: !!resultDiv, manualDiv: !!manualDiv, serverDiv: !!serverDiv, btnAuto: !!btnAuto, btnResult: !!btnResult, btnManual: !!btnManual, btnServer: !!btnServer });
 
   // 각 모드의 독립적인 스크롤 위치 저장
   let autoScrollPos = 0;
@@ -2474,12 +2471,10 @@ function renderOneResult(idx){
       loadSlotList(); // 슬롯 목록 로드
     }
   }
-  console.log('Setting up button handlers:', { btnAuto, btnResult, btnManual, btnServer });
-  if (btnAuto) btnAuto.onclick=()=>switchMode('auto');
-  if (btnResult) btnResult.onclick=()=>switchMode('result');
-  if (btnManual) btnManual.onclick=()=>switchMode('manual');
-  if (btnServer) btnServer.onclick=()=>switchMode('server');
-  console.log('Button handlers set up complete');
+  btnAuto.onclick=()=>switchMode('auto');
+  btnResult.onclick=()=>switchMode('result');
+  btnManual.onclick=()=>switchMode('manual');
+  btnServer.onclick=()=>switchMode('server');
 
   // 잠금/공유 선택 시 비밀번호 입력란 표시
   document.querySelectorAll('input[name="slotType"]').forEach(radio => {
