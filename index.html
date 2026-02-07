@@ -1491,6 +1491,22 @@
 
       dragonResult.results.forEach((r, i) => {
         const spiritStr = formatSpiritStr(r.spirit, r.spiritSlots);
+
+        // 버프/디버프 문자열 생성
+        const buffParts = [];
+        if (r.buff?.hp > 0) buffParts.push(`HP${r.buff.hp}%`);
+        if (r.buff?.atk > 0) buffParts.push(`ATK${r.buff.atk}%`);
+        if (r.buff?.df > 0) buffParts.push(`DEF${r.buff.df}%`);
+        const buffStr = buffParts.length > 0 ? buffParts.join(' ') : '-';
+
+        const debuffParts = [];
+        if (r.debuff?.hp > 0) debuffParts.push(`HP${r.debuff.hp}%`);
+        if (r.debuff?.atk > 0) debuffParts.push(`ATK${r.debuff.atk}%`);
+        if (r.debuff?.df > 0) debuffParts.push(`DEF${r.debuff.df}%`);
+        const debuffStr = debuffParts.length > 0 ? debuffParts.join(' ') : '-';
+
+        const hasBuffDebuff = buffStr !== '-' || debuffStr !== '-';
+
         panelsHtml += `
           <div class="result-item" onclick="applyResultToManual(${dragonIdx}, ${i})"
                style="background:#f8f9fa;padding:10px 15px;border:1px solid #e0e0e0;border-top:none;cursor:pointer;transition:background 0.2s;"
@@ -1498,6 +1514,7 @@
             <div style="font-weight:600;color:#1565c0;">[${i + 1}위] ${r.dragonType} | ${r.accessory}</div>
             <div style="font-size:13px;color:#666;">젬: ${r.gems} | 펜던트: ${r.pendant} | 인첸트: ${r.enchant}</div>
             <div style="font-size:13px;color:#9c27b0;">정령: ${spiritStr}</div>
+            ${hasBuffDebuff ? `<div style="font-size:13px;"><span style="color:#4caf50;">버프: ${buffStr}</span> | <span style="color:#f44336;">디버프: ${debuffStr}</span></div>` : ''}
             <div style="font-size:13px;margin-top:4px;">
               HP=<strong>${r.finalStats.hp}</strong> | ATK=<strong>${r.finalStats.atk}</strong> | DEF=<strong>${r.finalStats.df}</strong> |
               E=<strong>${r.eValue.toFixed(0)}</strong> | B=<strong style="color:#d32f2f;">${(r.B/1e6).toFixed(3)}</strong>
@@ -1839,35 +1856,138 @@
       dragonAccScores.push({ dragonIdx, dragonConfig, accScores });
     });
 
-    // 헝가리안 알고리즘 대신 그리디 방식으로 최적 배분
-    // (드래곤 수가 적으면 충분히 효과적)
-    // 각 장신구는 해당 장신구의 보유 개수까지 사용 가능
-    const accUsageCount = new Map(); // accIndex -> 사용 횟수
-    const assignments = [];
-
-    // 모든 (드래곤, 장신구) 조합을 B값 기준으로 정렬
-    const allPairs = [];
-    dragonAccScores.forEach(({ dragonIdx, dragonConfig, accScores }) => {
-      accScores.forEach(({ accIdx, accIndex, bestB, bestResult }) => {
-        if (bestResult) {
-          allPairs.push({ dragonIdx, accIdx, accIndex: bestResult.accIndex, bestB, bestResult });
-        }
-      });
-    });
-    allPairs.sort((a, b) => b.bestB - a.bestB);
-
-    // 그리디하게 배분 (각 드래곤에 하나의 장신구, 장신구는 보유개수까지 할당 가능)
-    const assignedDragons = new Set();
-    for (const pair of allPairs) {
-      const accIndex = pair.accIndex;
-      const maxInventory = accInventoryMap.get(accIndex) || 1;
-      const currentUsage = accUsageCount.get(accIndex) || 0;
-      if (!assignedDragons.has(pair.dragonIdx) && currentUsage < maxInventory) {
-        assignments.push(pair);
-        assignedDragons.add(pair.dragonIdx);
-        accUsageCount.set(accIndex, currentUsage + 1);
+    // Hungarian 알고리즘으로 최적 분배 (전역 최적해 보장)
+    // 장신구 인스턴스 목록 생성 (보유 개수만큼 가상 인스턴스 생성)
+    const accInstances = [];
+    selectedAccs.forEach((accData, accIdx) => {
+      const accIndex = accData.index;
+      const inventory = accInventoryMap.get(accIndex) || 1;
+      for (let i = 0; i < inventory; i++) {
+        accInstances.push({ accIdx, accIndex, instanceNum: i });
       }
-      if (assignedDragons.size >= AppState.dragons.length) break;
+    });
+
+    const numDragons = AppState.dragons.length;
+    const numInstances = accInstances.length;
+
+    // B값 매트릭스 생성: matrix[dragonIdx][instanceIdx] = bestB
+    // 동시에 결과 매트릭스도 저장
+    const bMatrix = [];
+    const resultMatrix = [];
+    let maxB = 0;
+
+    for (let d = 0; d < numDragons; d++) {
+      bMatrix[d] = [];
+      resultMatrix[d] = [];
+      const dragonData = dragonAccScores[d];
+      for (let i = 0; i < numInstances; i++) {
+        const instance = accInstances[i];
+        const accScore = dragonData.accScores.find(s => s.accIdx === instance.accIdx);
+        if (accScore && accScore.bestResult) {
+          bMatrix[d][i] = accScore.bestB;
+          resultMatrix[d][i] = accScore.bestResult;
+          if (accScore.bestB > maxB) maxB = accScore.bestB;
+        } else {
+          bMatrix[d][i] = 0;
+          resultMatrix[d][i] = null;
+        }
+      }
+    }
+
+    // Hungarian 알고리즘 구현 (Kuhn-Munkres)
+    // 최대화 문제를 최소화로 변환: cost = maxB - bValue
+    function hungarianAlgorithm(profitMatrix, n, m) {
+      // n = 드래곤 수, m = 장신구 인스턴스 수
+      // 패딩하여 정사각 행렬로 만듦
+      const size = Math.max(n, m);
+      const cost = [];
+      for (let i = 0; i < size; i++) {
+        cost[i] = [];
+        for (let j = 0; j < size; j++) {
+          if (i < n && j < m) {
+            cost[i][j] = maxB - profitMatrix[i][j];
+          } else {
+            cost[i][j] = maxB; // 더미 셀은 높은 비용
+          }
+        }
+      }
+
+      const u = new Array(size + 1).fill(0);
+      const v = new Array(size + 1).fill(0);
+      const p = new Array(size + 1).fill(0);
+      const way = new Array(size + 1).fill(0);
+      const INF = 1e18;
+
+      for (let i = 1; i <= n; i++) {
+        p[0] = i;
+        let j0 = 0;
+        const minv = new Array(size + 1).fill(INF);
+        const used = new Array(size + 1).fill(false);
+
+        do {
+          used[j0] = true;
+          const i0 = p[j0];
+          let delta = INF;
+          let j1 = 0;
+
+          for (let j = 1; j <= size; j++) {
+            if (!used[j]) {
+              const cur = cost[i0 - 1][j - 1] - u[i0] - v[j];
+              if (cur < minv[j]) {
+                minv[j] = cur;
+                way[j] = j0;
+              }
+              if (minv[j] < delta) {
+                delta = minv[j];
+                j1 = j;
+              }
+            }
+          }
+
+          for (let j = 0; j <= size; j++) {
+            if (used[j]) {
+              u[p[j]] += delta;
+              v[j] -= delta;
+            } else {
+              minv[j] -= delta;
+            }
+          }
+
+          j0 = j1;
+        } while (p[j0] !== 0);
+
+        do {
+          const j1 = way[j0];
+          p[j0] = p[j1];
+          j0 = j1;
+        } while (j0);
+      }
+
+      // 결과 추출: assignment[dragonIdx] = instanceIdx
+      const assignment = new Array(n).fill(-1);
+      for (let j = 1; j <= size; j++) {
+        if (p[j] > 0 && p[j] <= n && j <= m) {
+          assignment[p[j] - 1] = j - 1;
+        }
+      }
+      return assignment;
+    }
+
+    const optimalAssignment = hungarianAlgorithm(bMatrix, numDragons, numInstances);
+
+    // 결과 조립
+    const assignments = [];
+    for (let d = 0; d < numDragons; d++) {
+      const instIdx = optimalAssignment[d];
+      if (instIdx >= 0 && resultMatrix[d][instIdx]) {
+        assignments.push({
+          dragonIdx: d,
+          accIdx: accInstances[instIdx].accIdx,
+          accIndex: accInstances[instIdx].accIndex,
+          bestB: bMatrix[d][instIdx],
+          bestResult: resultMatrix[d][instIdx]
+        });
+      }
     }
 
     // 결과를 드래곤 순서대로 정렬
@@ -1891,6 +2011,21 @@
       totalB += r.B;
       const spiritStr = formatSpiritStr(r.spirit, r.spiritSlots);
 
+      // 버프/디버프 문자열 생성
+      const buffParts = [];
+      if (r.buff?.hp > 0) buffParts.push(`HP${r.buff.hp}%`);
+      if (r.buff?.atk > 0) buffParts.push(`ATK${r.buff.atk}%`);
+      if (r.buff?.df > 0) buffParts.push(`DEF${r.buff.df}%`);
+      const buffStr = buffParts.length > 0 ? buffParts.join(' ') : '-';
+
+      const debuffParts = [];
+      if (r.debuff?.hp > 0) debuffParts.push(`HP${r.debuff.hp}%`);
+      if (r.debuff?.atk > 0) debuffParts.push(`ATK${r.debuff.atk}%`);
+      if (r.debuff?.df > 0) debuffParts.push(`DEF${r.debuff.df}%`);
+      const debuffStr = debuffParts.length > 0 ? debuffParts.join(' ') : '-';
+
+      const hasBuffDebuff = buffStr !== '-' || debuffStr !== '-';
+
       outputHtml += `<div style="margin-bottom:15px;">`;
       outputHtml += `<div style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);color:#fff;padding:10px 15px;border-radius:8px 8px 0 0;font-weight:bold;">`;
       outputHtml += `★ 드래곤 ${r.dragonNumber} (${r.dragonGrade} / ${r.dragonType})`;
@@ -1902,6 +2037,7 @@
           <div style="font-weight:600;color:#1565c0;">[최적] ${r.dragonType} | ${r.accessory}</div>
           <div style="font-size:13px;color:#666;">젬: ${r.gems} | 펜던트: ${r.pendant} | 인첸트: ${r.enchant}</div>
           <div style="font-size:13px;color:#9c27b0;">정령: ${spiritStr}</div>
+          ${hasBuffDebuff ? `<div style="font-size:13px;"><span style="color:#4caf50;">버프: ${buffStr}</span> | <span style="color:#f44336;">디버프: ${debuffStr}</span></div>` : ''}
           <div style="font-size:13px;margin-top:4px;">
             HP=<strong>${r.finalStats.hp}</strong> | ATK=<strong>${r.finalStats.atk}</strong> | DEF=<strong>${r.finalStats.df}</strong> |
             E=<strong>${r.eValue.toFixed(0)}</strong> | B=<strong style="color:#d32f2f;">${(r.B/1e6).toFixed(3)}</strong>
@@ -1942,10 +2078,10 @@
       const sheetData = [];
 
       // 헤더 행
-      sheetData.push(['순위', '타입', '장신구', '젬', '펜던트', '인첸트', '정령', 'HP', 'ATK', 'DEF', 'E', 'B']);
+      sheetData.push(['순위', '타입', '장신구', '젬', '펜던트', '인첸트', '정령', '버프', '디버프', 'HP', 'ATK', 'DEF', 'E', 'B']);
 
       // 드래곤 정보 행
-      sheetData.push([`${dragonResult.dragonGrade} / ${dragonResult.dragonType}`, '', '', '', '', '', '', '', '', '', '', '']);
+      sheetData.push([`${dragonResult.dragonGrade} / ${dragonResult.dragonType}`, '', '', '', '', '', '', '', '', '', '', '', '', '']);
 
       // 결과 데이터 행
       dragonResult.results.forEach((r, i) => {
@@ -1969,6 +2105,19 @@
           gemStr = parts.length > 0 ? parts.join(' ') : '-';
         }
 
+        // 버프/디버프 문자열 생성
+        const buffParts = [];
+        if (r.buff?.hp > 0) buffParts.push(`HP${r.buff.hp}%`);
+        if (r.buff?.atk > 0) buffParts.push(`ATK${r.buff.atk}%`);
+        if (r.buff?.df > 0) buffParts.push(`DEF${r.buff.df}%`);
+        const buffStr = buffParts.length > 0 ? buffParts.join(' ') : '-';
+
+        const debuffParts = [];
+        if (r.debuff?.hp > 0) debuffParts.push(`HP${r.debuff.hp}%`);
+        if (r.debuff?.atk > 0) debuffParts.push(`ATK${r.debuff.atk}%`);
+        if (r.debuff?.df > 0) debuffParts.push(`DEF${r.debuff.df}%`);
+        const debuffStr = debuffParts.length > 0 ? debuffParts.join(' ') : '-';
+
         sheetData.push([
           i + 1,
           r.dragonType,
@@ -1977,6 +2126,8 @@
           r.pendant,
           r.enchant,
           formatSpiritStr(r.spirit, r.spiritSlots),
+          buffStr,
+          debuffStr,
           r.finalStats.hp,
           r.finalStats.atk,
           r.finalStats.df,
@@ -1993,10 +2144,12 @@
         { wch: 6 },   // 순위
         { wch: 10 },  // 타입
         { wch: 18 },  // 장신구
-        { wch: 35 },  // 젬 (HP 0 ATK 0 DEF 37 37 37 37 37 형식)
+        { wch: 35 },  // 젬
         { wch: 20 },  // 펜던트
         { wch: 12 },  // 인첸트
         { wch: 35 },  // 정령
+        { wch: 18 },  // 버프
+        { wch: 18 },  // 디버프
         { wch: 8 },   // HP
         { wch: 8 },   // ATK
         { wch: 8 },   // DEF
@@ -3937,28 +4090,6 @@ function renderOneResult(idx){
               </div>
             </div>
 
-            <!-- 용어 설명 -->
-            <div>
-              <h3 style="color:#667eea;border-bottom:2px solid #667eea;padding-bottom:8px;margin-bottom:16px;">📚 용어 설명</h3>
-              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;">
-                <div style="background:#fff3e0;padding:12px;border-radius:8px;">
-                  <b style="color:#e65100;">E-Value (이벨)</b>
-                  <p style="margin:6px 0 0;font-size:13px;color:#555;">HP + 4×ATK + 4×DEF</p>
-                </div>
-                <div style="background:#fce4ec;padding:12px;border-radius:8px;">
-                  <b style="color:#c2185b;">B-Value (비벨)</b>
-                  <p style="margin:6px 0 0;font-size:13px;color:#555;">HP × ATK × DEF ÷ 10⁶</p>
-                </div>
-                <div style="background:#e8f5e9;padding:12px;border-radius:8px;">
-                  <b style="color:#2e7d32;">플옵 (+)</b>
-                  <p style="margin:6px 0 0;font-size:13px;color:#555;">정령 고정 수치 옵션</p>
-                </div>
-                <div style="background:#e3f2fd;padding:12px;border-radius:8px;">
-                  <b style="color:#1565c0;">퍼옵 (%)</b>
-                  <p style="margin:6px 0 0;font-size:13px;color:#555;">정령 퍼센트 옵션</p>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </div>
