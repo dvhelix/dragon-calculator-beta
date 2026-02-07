@@ -1232,8 +1232,8 @@
     resultBox.innerHTML = '<div style="text-align:center;padding:40px;color:#666;"><div style="font-weight:700;margin-bottom:10px;">계산 중입니다...</div><small style="color:#999;">조합이 많을 경우 시간이 걸릴 수 있습니다.</small></div>';
 
     // UI 업데이트를 위한 짧은 딜레이
-    setTimeout(() => {
-      calcAutoCore();
+    setTimeout(async () => {
+      await calcAutoCore();
     }, 50);
   }
 
@@ -1251,7 +1251,7 @@
     });
   }
 
-  function calcAutoCore(){
+  async function calcAutoCore(){
     const resultBox = document.getElementById("autoResult");
 
     // 0. 모든 드래곤의 정령/버프/디버프 값 동기화
@@ -1328,7 +1328,7 @@
         const qty = Number(document.getElementById(`acc_qty_${acc.index}`)?.value || 1);
         accInventoryMap.set(acc.index, qty);
       });
-      calcAutoOptimizeMode(selectedAcc, gemBase, pendantCombinations, pendantVer, pendantMode, manualPendantStr, pot, col, ENCHANT, accInventoryMap);
+      await calcAutoOptimizeMode(selectedAcc, gemBase, pendantCombinations, pendantVer, pendantMode, manualPendantStr, pot, col, ENCHANT, accInventoryMap);
       return;
     }
 
@@ -1760,16 +1760,31 @@
   }
 
   // ===== Optimize 모드 계산 =====
-  function calcAutoOptimizeMode(selectedAcc, gemBase, pendantCombinations, pendantVer, pendantMode, manualPendantStr, pot, col, ENCHANT, accInventoryMap) {
+  async function calcAutoOptimizeMode(selectedAcc, gemBase, pendantCombinations, pendantVer, pendantMode, manualPendantStr, pot, col, ENCHANT, accInventoryMap) {
     const resultBox = document.getElementById("autoResult");
+
+    // tqdm 스타일 진행률 표시
+    function showProgress(percent) {
+      const filled = Math.round(percent / 5);
+      const empty = 20 - filled;
+      const bar = '█'.repeat(filled) + '░'.repeat(empty);
+      resultBox.innerHTML = `<div style="padding:30px;text-align:center;font-family:monospace;font-size:14px;color:#333;">${bar} ${percent}%</div>`;
+    }
+    const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+    showProgress(0);
+    await delay(20);
 
     // 모든 드래곤의 정령/버프/디버프 값 동기화
     syncAllDragonValues();
+    showProgress(5);
+    await delay(20);
 
     // 각 드래곤에 대해 각 장신구의 최적 B값 계산
     const dragonAccScores = [];
 
-    AppState.dragons.forEach((dragonConfig, dragonIdx) => {
+    for (let dragonIdx = 0; dragonIdx < AppState.dragons.length; dragonIdx++) {
+      const dragonConfig = AppState.dragons[dragonIdx];
       const baseStats = dragon[dragonConfig.grade][dragonConfig.type];
       const spiritFlat = new Stats(dragonConfig.spirit.flat.hp, dragonConfig.spirit.flat.atk, dragonConfig.spirit.flat.df);
       const spiritPct = new Stats(dragonConfig.spirit.pct.hp / 100, dragonConfig.spirit.pct.atk / 100, dragonConfig.spirit.pct.df / 100);
@@ -1854,12 +1869,18 @@
       });
 
       dragonAccScores.push({ dragonIdx, dragonConfig, accScores });
-    });
+      const progressPct = Math.round(10 + (dragonIdx + 1) / AppState.dragons.length * 60);
+      showProgress(progressPct);
+      await delay(10);
+    }
+
+    showProgress(75);
+    await delay(20);
 
     // Hungarian 알고리즘으로 최적 분배 (전역 최적해 보장)
     // 장신구 인스턴스 목록 생성 (보유 개수만큼 가상 인스턴스 생성)
     const accInstances = [];
-    selectedAccs.forEach((accData, accIdx) => {
+    selectedAcc.forEach((accData, accIdx) => {
       const accIndex = accData.index;
       const inventory = accInventoryMap.get(accIndex) || 1;
       for (let i = 0; i < inventory; i++) {
@@ -1974,6 +1995,8 @@
     }
 
     const optimalAssignment = hungarianAlgorithm(bMatrix, numDragons, numInstances);
+    showProgress(90);
+    await delay(20);
 
     // 결과 조립
     const assignments = [];
@@ -1992,6 +2015,8 @@
 
     // 결과를 드래곤 순서대로 정렬
     assignments.sort((a, b) => a.dragonIdx - b.dragonIdx);
+    showProgress(100);
+    await delay(30);
 
     // 전역에 저장
     const allResults = assignments.map(a => ({
