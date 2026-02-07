@@ -288,7 +288,7 @@
             <label><input type="radio" name="calc_mode" value="normal" checked onchange="onCalcModeChange()">Normal (드래곤별 개별 계산)</label>
           </div>
           <div class="row">
-            <label><input type="radio" name="calc_mode" value="optimize" onchange="onCalcModeChange()">Optimize (최적 배분)</label>
+            <label><input type="radio" name="calc_mode" value="optimize" onchange="onCalcModeChange()">Optimize (최적 분배)</label>
           </div>
           <div id="topNRow" style="margin-top:8px;">
             <div class="row">Top N <input id="top_n" type="number" value="5" style="width:80px"></div>
@@ -1434,6 +1434,7 @@
                   dragonType: dragonConfig.type,
                   accessory: `${accessory.name} Lv${accessory.level}`,
                   gems: `HP${hpGems} ATK${atkGems} DEF${defGems}`,
+                  gemDetail: { counts: { hp: hpGems, atk: atkGems, df: defGems }, values: { hp: gemBase.hp, atk: gemBase.atk, df: gemBase.df } },
                   pendant: `${pendantLabel} (${pendantSlotStr})`,
                   enchant: `${enchantLabel} +${ENCHANT}%`,
                   finalStats,
@@ -1812,6 +1813,7 @@
                     accIdx: accIdx,
                     accIndex: accessory.index,
                     gems: `HP${hpGems} ATK${atkGems} DEF${defGems}`,
+                    gemDetail: { counts: { hp: hpGems, atk: atkGems, df: defGems }, values: { hp: gemBase.hp, atk: gemBase.atk, df: gemBase.df } },
                     pendant: `${pendantVer === "v3" ? "수동입력" : pendantMode} (${pendantSlotStr})`,
                     enchant: `${enchantLabel} +${ENCHANT}%`,
                     finalStats,
@@ -1947,11 +1949,31 @@
 
       // 결과 데이터 행
       dragonResult.results.forEach((r, i) => {
+        // 젬 상세 형식 변환 (사용한 젬만: HP 148 148 148 DEF 37 37)
+        let gemStr = r.gems;
+        if (r.gemDetail) {
+          const { counts, values } = r.gemDetail;
+          const parts = [];
+          // HP (사용한 경우만)
+          if (counts.hp > 0) {
+            parts.push('HP ' + Array(counts.hp).fill(values.hp).join(' '));
+          }
+          // ATK (사용한 경우만)
+          if (counts.atk > 0) {
+            parts.push('ATK ' + Array(counts.atk).fill(values.atk).join(' '));
+          }
+          // DEF (사용한 경우만)
+          if (counts.df > 0) {
+            parts.push('DEF ' + Array(counts.df).fill(values.df).join(' '));
+          }
+          gemStr = parts.length > 0 ? parts.join(' ') : '-';
+        }
+
         sheetData.push([
           i + 1,
           r.dragonType,
           r.accessory,
-          r.gems,
+          gemStr,
           r.pendant,
           r.enchant,
           formatSpiritStr(r.spirit, r.spiritSlots),
@@ -1971,7 +1993,7 @@
         { wch: 6 },   // 순위
         { wch: 10 },  // 타입
         { wch: 18 },  // 장신구
-        { wch: 15 },  // 젬
+        { wch: 35 },  // 젬 (HP 0 ATK 0 DEF 37 37 37 37 37 형식)
         { wch: 20 },  // 펜던트
         { wch: 12 },  // 인첸트
         { wch: 35 },  // 정령
@@ -3861,7 +3883,7 @@ function renderOneResult(idx){
                 <h4 style="margin:0 0 10px;color:#333;">1. 계산 모드 선택</h4>
                 <ul style="margin:0;padding-left:20px;color:#555;line-height:1.8;">
                   <li><b>Normal:</b> 선택한 장신구들로 각각 계산</li>
-                  <li><b>Optimize:</b> 드래곤별 최적 장신구 자동 배분</li>
+                  <li><b>Optimize:</b> 드래곤별 최적 장신구 자동 분배</li>
                 </ul>
               </div>
               <div style="background:#f8f9fa;padding:16px;border-radius:8px;margin-bottom:12px;">
