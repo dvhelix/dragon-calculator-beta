@@ -335,7 +335,7 @@
 
         <!-- 장신구 선택 -->
         <fieldset>
-          <legend>장신구 선택 (복수 선택 가능)</legend>
+          <legend>장신구 선택</legend>
           <div class="toolbar">
             <button class="btn" type="button" id="btnToggleFavorites" onclick="toggleFavoritesFilter()">즐겨찾기만 보기</button>
             <button class="btn" type="button" onclick="toggleLevel(20)">Lv20</button>
@@ -345,6 +345,21 @@
             <button class="btn" type="button" onclick="selectNone()">전체 해제</button>
           </div>
           <div id="accList" class="acc-list"></div>
+
+          <!-- 선택된 장신구 표시 -->
+          <div id="selectedAccDisplay" style="margin-top:10px;padding:10px;background:#e8f5e9;border-radius:6px;display:none;">
+            <div style="font-weight:700;color:#2e7d32;margin-bottom:6px;">선택된 장신구:</div>
+            <div id="selectedAccList" style="font-size:13px;"></div>
+          </div>
+
+          <!-- Optimize 모드용: 장신구 인벤토리 개수 -->
+          <div id="accInventoryRow" style="margin-top:10px;display:none;">
+            <div class="row">
+              <strong>각 장신구 보유 개수:</strong>
+              <input id="acc_inventory_count" type="number" value="1" min="1" max="9" style="width:60px;">
+              <span class="small">(같은 장신구를 여러 드래곤에게 배분 가능)</span>
+            </div>
+          </div>
         </fieldset>
       </div>
 
@@ -402,23 +417,24 @@
         </fieldset>
       </div>
 
-      <!-- ===== 오른쪽 컬럼: TopN, 계산 버튼, 결과 ===== -->
+      <!-- ===== 오른쪽 컬럼: 모드, TopN, 계산 버튼, 결과 ===== -->
       <div class="calc-column">
-        <!-- 기타 설정 -->
+        <!-- 계산 모드 -->
         <fieldset>
-          <legend>기타 설정</legend>
-          <div class="row">Top N <input id="top_n" type="number" value="5" style="width:80px"></div>
-          <div class="row" style="margin-top:10px;">
-            <strong>장신구 모드:</strong>
+          <legend>계산 모드</legend>
+          <div class="row">
+            <label><input type="radio" name="calc_mode" value="normal" checked onchange="onCalcModeChange()">Normal (드래곤별 개별 계산)</label>
           </div>
           <div class="row">
-            <label><input type="radio" name="acc_mode" value="share" checked>공유 (모든 드래곤 동일 적용)</label>
+            <label><input type="radio" name="calc_mode" value="optimize" onchange="onCalcModeChange()">Optimize (드래곤별 최적 배분)</label>
           </div>
-          <div class="row">
-            <label><input type="radio" name="acc_mode" value="distribute">비공유 (드래곤별 최적 배분)</label>
+          <div class="small" style="margin-top:4px;color:#666;" id="calcModeHint">
+            각 드래곤별로 모든 장신구 조합을 계산합니다.
           </div>
-          <div class="small" style="margin-top:4px;color:#666;">
-            비공유 모드: 장신구를 드래곤들에게 분배하여 최적 조합 계산
+
+          <!-- Normal 모드 전용: Top N -->
+          <div id="topNRow" style="margin-top:10px;">
+            <div class="row">Top N <input id="top_n" type="number" value="5" style="width:80px"></div>
           </div>
         </fieldset>
 
@@ -974,17 +990,6 @@
   }
 
   // ===== 유틸리티 함수 =====
-  // 입력값 가져오기
-  function val(id){ return Number(document.getElementById(id)?.value||0); }
-
-  // 정령/버프/디버프 초기화 (기존 호환성)
-  function resetSpiritBuffs(){
-    ['sf_hp','sf_atk','sf_df','sp_hp','sp_atk','sp_df','se_hp','se_atk','se_df','bf_hp','bf_atk','bf_df','db_hp','db_atk','db_df'].forEach(id=>{
-      const el=document.getElementById(id);
-      if(el) el.value=0;
-    });
-  }
-
   // 모든 드래곤의 정령/버프/디버프 초기화
   function resetAllDragonSpiritBuffs() {
     AppState.dragons.forEach(dragon => {
@@ -1034,16 +1039,6 @@
     setValue(`d${manualIdx}_m_type`, dragon.type);
 
     alert(`드래곤 ${manualIdx}에 정령/버프/디버프 값이 적용되었습니다.`);
-  }
-
-  function copyToManualDragon(dragonIdx){
-    // 기존 호환성 - 자동계산기의 정령/버프/디버프 값을 수동계산기로 복사
-    ['sf_hp','sf_atk','sf_df','sp_hp','sp_atk','sp_df','se_hp','se_atk','se_df','bf_hp','bf_atk','bf_df','db_hp','db_atk','db_df'].forEach(field => {
-      const value = val(field);
-      const el = document.getElementById(`d${dragonIdx}_${field}`);
-      if(el) el.value = value;
-    });
-    alert(`드래곤 ${dragonIdx}에 정령/버프/디버프 값이 적용되었습니다.`);
   }
 
   // ===== 장신구 즐겨찾기 관리 =====
@@ -1158,14 +1153,17 @@
       };
 
       const label = document.createElement('label');
-      label.innerHTML = `<input type="checkbox" id="${id}"> ${n} Lv${l} | HP+${h}% ATK+${a}% DEF+${d}%`;
+      label.innerHTML = `<input type="checkbox" id="${id}" onchange="onAccCheckboxChange()"> ${n} Lv${l} | HP+${h}% ATK+${a}% DEF+${d}%`;
       label.style.flex = '1';
 
       line.appendChild(starBtn);
       line.appendChild(label);
       accListEl.appendChild(line);
-      accCheckboxes.push({ id, name: n, level: l, hp: h, atk: a, df: d });
+      accCheckboxes.push({ id, name: n, level: l, hp: h, atk: a, df: d, index: i });
     });
+
+    // 선택된 장신구 표시 업데이트
+    updateSelectedAccDisplay();
   }
 
   // 즐겨찾기 필터 토글
@@ -1182,14 +1180,56 @@
   loadFavorites();
   renderAccessories();
 
+  // ===== 계산 모드 전환 =====
+  function onCalcModeChange() {
+    const mode = document.querySelector('input[name="calc_mode"]:checked')?.value || 'normal';
+    const topNRow = document.getElementById('topNRow');
+    const accInventoryRow = document.getElementById('accInventoryRow');
+    const hint = document.getElementById('calcModeHint');
+
+    if (mode === 'normal') {
+      topNRow.style.display = 'block';
+      accInventoryRow.style.display = 'none';
+      hint.textContent = '각 드래곤별로 모든 장신구 조합을 계산합니다.';
+    } else {
+      topNRow.style.display = 'none';
+      accInventoryRow.style.display = 'block';
+      hint.textContent = '드래곤들에게 장신구를 최적 배분하여 총 B-Value를 최대화합니다.';
+    }
+  }
+
+  // 선택된 장신구 표시 업데이트
+  function updateSelectedAccDisplay() {
+    const selectedAcc = accCheckboxes.filter(o => document.getElementById(o.id)?.checked);
+    const display = document.getElementById('selectedAccDisplay');
+    const list = document.getElementById('selectedAccList');
+
+    if (selectedAcc.length === 0) {
+      display.style.display = 'none';
+      return;
+    }
+
+    display.style.display = 'block';
+    list.innerHTML = selectedAcc.map(acc =>
+      `<div style="padding:2px 0;">• ${acc.name} Lv${acc.level} (HP+${acc.hp}% ATK+${acc.atk}% DEF+${acc.df}%)</div>`
+    ).join('');
+  }
+
+  // 장신구 체크박스 변경 시 호출
+  function onAccCheckboxChange() {
+    updateSelectedAccDisplay();
+  }
+
   function selectNone(){
     accCheckboxes.forEach(o => document.getElementById(o.id).checked = false);
+    updateSelectedAccDisplay();
   }
 
   function toggleLevel(level){
     const filtered = accCheckboxes.filter(o => o.level === level);
     const allChecked = filtered.every(o => document.getElementById(o.id).checked);
     filtered.forEach(o => document.getElementById(o.id).checked = !allChecked);
+    updateSelectedAccDisplay();
   }
 
   document.querySelectorAll('input[name="pendant_ver"]').forEach(r => {
@@ -1335,16 +1375,17 @@
       }
     }
 
-    // 6. 장신구 모드 확인
-    const accMode = document.querySelector('input[name="acc_mode"]:checked')?.value || 'share';
+    // 6. 계산 모드 확인
+    const calcMode = document.querySelector('input[name="calc_mode"]:checked')?.value || 'normal';
 
-    // 비공유 모드: 드래곤별 최적 장신구 배분 계산
-    if (accMode === 'distribute' && AppState.dragons.length > 1 && selectedAcc.length >= AppState.dragons.length) {
-      calcAutoDistributeMode(selectedAcc, gemBase, pendantCombinations, pendantVer, pendantMode, manualPendantStr, topN, pot, col, ENCHANT);
+    // Optimize 모드: 드래곤별 최적 장신구 배분 계산
+    if (calcMode === 'optimize') {
+      const inventoryCount = Number(document.getElementById('acc_inventory_count')?.value || 1);
+      calcAutoOptimizeMode(selectedAcc, gemBase, pendantCombinations, pendantVer, pendantMode, manualPendantStr, pot, col, ENCHANT, inventoryCount);
       return;
     }
 
-    // 공유 모드: 드래곤별로 모든 장신구 적용
+    // Normal 모드: 드래곤별로 모든 장신구 적용
     const allResults = [];
 
     AppState.dragons.forEach((dragonConfig) => {
@@ -1470,29 +1511,36 @@
     // 7. 결과를 전역에 저장 (수동계산기 적용용)
     window._lastAutoResults = allResults;
 
-    // 8. 결과 출력 (클릭 가능한 HTML)
+    // 8. 결과 출력 (탭 형식)
     if (!allResults.length || allResults.every(d => d.results.length === 0)) {
       resultBox.innerHTML = '<div style="color:#999;text-align:center;padding:20px;">결과가 생성되지 않았습니다.</div>';
       return;
     }
 
-    let outputHtml = '';
+    // 결과 탭 생성
+    let tabsHtml = '<div class="dragon-tabs" style="margin-bottom:10px;">';
+    allResults.forEach((dragonResult, dragonIdx) => {
+      tabsHtml += `<button class="dragon-tab ${dragonIdx === 0 ? 'active' : ''}" onclick="switchResultTab(${dragonIdx})" data-result-idx="${dragonIdx}">드래곤 ${dragonResult.dragonNumber}</button>`;
+    });
+    tabsHtml += '</div>';
+
+    // 결과 패널 생성
+    let panelsHtml = '';
     let outputText = '';
 
     allResults.forEach((dragonResult, dragonIdx) => {
-      outputHtml += `<div style="margin-bottom:20px;">`;
-      outputHtml += `<div style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);color:#fff;padding:10px 15px;border-radius:8px 8px 0 0;font-weight:bold;">`;
-      outputHtml += `★ 드래곤 ${dragonResult.dragonNumber} (${dragonResult.dragonGrade} / ${dragonResult.dragonType})`;
-      outputHtml += `</div>`;
+      panelsHtml += `<div class="dragon-settings-panel ${dragonIdx === 0 ? 'active' : ''}" id="resultPanel_${dragonIdx}">`;
+      panelsHtml += `<div style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);color:#fff;padding:10px 15px;border-radius:8px 8px 0 0;font-weight:bold;">`;
+      panelsHtml += `★ 드래곤 ${dragonResult.dragonNumber} (${dragonResult.dragonGrade} / ${dragonResult.dragonType})`;
+      panelsHtml += `</div>`;
 
       outputText += `\n${'━'.repeat(60)}\n`;
       outputText += `★ 드래곤 ${dragonResult.dragonNumber} (${dragonResult.dragonGrade} / ${dragonResult.dragonType})\n`;
       outputText += `${'━'.repeat(60)}\n`;
 
       dragonResult.results.forEach((r, i) => {
-        const resultId = `result_${dragonIdx}_${i}`;
-        outputHtml += `
-          <div id="${resultId}" class="result-item" onclick="applyResultToManual(${dragonIdx}, ${i})"
+        panelsHtml += `
+          <div class="result-item" onclick="applyResultToManual(${dragonIdx}, ${i})"
                style="background:#f8f9fa;padding:10px 15px;border:1px solid #e0e0e0;border-top:none;cursor:pointer;transition:background 0.2s;"
                onmouseover="this.style.background='#e3f2fd'" onmouseout="this.style.background='#f8f9fa'">
             <div style="font-weight:600;color:#1565c0;">[${i + 1}위] ${r.dragonType} | ${r.accessory}</div>
@@ -1509,10 +1557,10 @@
         outputText += `HP=${r.finalStats.hp} | ATK=${r.finalStats.atk} | DEF=${r.finalStats.df} | E=${r.eValue.toFixed(0)} | B=${(r.B/1e6).toFixed(3)}\n\n`;
       });
 
-      outputHtml += `</div>`;
+      panelsHtml += `</div>`;
     });
 
-    resultBox.innerHTML = outputHtml;
+    resultBox.innerHTML = tabsHtml + panelsHtml;
 
     // 예측기 결과 탭에 자동 저장 (텍스트 형식)
     const resultStorage = document.getElementById("resultStorage");
@@ -1526,6 +1574,15 @@
       `[${timestamp}] 계산 결과\n${'='.repeat(80)}\n\n`;
 
     resultStorage.textContent = resultStorage.textContent + separator + outputText;
+  }
+
+  // 결과 탭 전환
+  function switchResultTab(idx) {
+    document.querySelectorAll('#autoResult .dragon-tab').forEach(tab => tab.classList.remove('active'));
+    document.querySelectorAll('#autoResult .dragon-settings-panel').forEach(panel => panel.classList.remove('active'));
+
+    document.querySelector(`#autoResult .dragon-tab[data-result-idx="${idx}"]`)?.classList.add('active');
+    document.getElementById(`resultPanel_${idx}`)?.classList.add('active');
   }
 
   // 결과 클릭 시 수동계산기에 적용
@@ -1564,43 +1621,24 @@
       const atkCount = parseInt(gemMatch[2]);
       const defCount = parseInt(gemMatch[3]);
 
-      // 젬 슬롯 초기화 및 설정
-      let slotIdx = 1;
       const gemBase = {
         hp: Number(document.querySelector('input[name="gem_hp"]:checked')?.value || 156),
         atk: Number(document.querySelector('input[name="gem_atk"]:checked')?.value || 39),
         df: Number(document.querySelector('input[name="gem_df"]:checked')?.value || 39)
       };
 
+      let slotIdx = 1;
       // HP 젬
       for (let i = 0; i < hpCount && slotIdx <= 5; i++, slotIdx++) {
-        const typeSelect = document.getElementById(`d${manualIdx}_slot_type_${slotIdx}`);
-        const valSelect = document.getElementById(`d${manualIdx}_slot_val_${slotIdx}`);
-        if (typeSelect) {
-          typeSelect.value = 'HP';
-          typeSelect.dispatchEvent(new Event('change'));
-          setTimeout(() => { if (valSelect) valSelect.value = gemBase.hp; }, 50);
-        }
+        applyGemSlot(manualIdx, slotIdx, 'HP', gemBase.hp);
       }
       // ATK 젬
       for (let i = 0; i < atkCount && slotIdx <= 5; i++, slotIdx++) {
-        const typeSelect = document.getElementById(`d${manualIdx}_slot_type_${slotIdx}`);
-        const valSelect = document.getElementById(`d${manualIdx}_slot_val_${slotIdx}`);
-        if (typeSelect) {
-          typeSelect.value = 'ATK';
-          typeSelect.dispatchEvent(new Event('change'));
-          setTimeout(() => { if (valSelect) valSelect.value = gemBase.atk; }, 50);
-        }
+        applyGemSlot(manualIdx, slotIdx, 'ATK', gemBase.atk);
       }
       // DEF 젬
       for (let i = 0; i < defCount && slotIdx <= 5; i++, slotIdx++) {
-        const typeSelect = document.getElementById(`d${manualIdx}_slot_type_${slotIdx}`);
-        const valSelect = document.getElementById(`d${manualIdx}_slot_val_${slotIdx}`);
-        if (typeSelect) {
-          typeSelect.value = 'DEF';
-          typeSelect.dispatchEvent(new Event('change'));
-          setTimeout(() => { if (valSelect) valSelect.value = gemBase.df; }, 50);
-        }
+        applyGemSlot(manualIdx, slotIdx, 'DEF', gemBase.df);
       }
     }
 
@@ -1613,10 +1651,12 @@
       // ACC_TABLE에서 해당 장신구 찾기
       const accIndex = ACC_TABLE.findIndex(acc => acc[0] === accName && acc[1] === accLevel);
       if (accIndex !== -1) {
-        const accData = ACC_TABLE[accIndex];
-        document.getElementById(`d${manualIdx}_m_acc_hp`).value = accData[2];
-        document.getElementById(`d${manualIdx}_m_acc_atk`).value = accData[3];
-        document.getElementById(`d${manualIdx}_m_acc_df`).value = accData[4];
+        const accId = `acc_${accIndex}`;
+        const accSelect = document.getElementById(`d${manualIdx}_acc_select`);
+        if (accSelect) {
+          accSelect.value = accId;
+          onManualAccessoryChange(manualIdx, accId);
+        }
       }
     }
 
@@ -1638,13 +1678,11 @@
       let pendHp = 0, pendAtk = 0, pendDf = 0;
 
       pendParts.forEach(part => {
-        const match = part.match(/(HP|ATK|DEF)(\d+)/);
-        if (match) {
-          const stat = match[1];
-          const val = parseInt(match[2]);
-          if (stat === 'HP') pendHp += val;
-          else if (stat === 'ATK') pendAtk += val;
-          else if (stat === 'DEF') pendDf += val;
+        const m = part.match(/(HP|ATK|DEF)(\d+)/);
+        if (m) {
+          if (m[1] === 'HP') pendHp += parseInt(m[2]);
+          else if (m[1] === 'ATK') pendAtk += parseInt(m[2]);
+          else if (m[1] === 'DEF') pendDf += parseInt(m[2]);
         }
       });
 
@@ -1675,12 +1713,24 @@
 
     alert(`드래곤 ${manualIdx}에 [${resultIdx + 1}위] 결과가 적용되었습니다.\n수동계산기 탭에서 확인해주세요.`);
 
-    // 수동계산기 탭으로 전환
+    // 수동계산기 탭으로 전환 및 해당 드래곤 탭 활성화
     switchMode('manual');
+    switchManualDragonTab(manualIdx);
   }
 
-  // ===== 장신구 비공유 모드 계산 =====
-  function calcAutoDistributeMode(selectedAcc, gemBase, pendantCombinations, pendantVer, pendantMode, manualPendantStr, topN, pot, col, ENCHANT) {
+  // 젬 슬롯 적용 헬퍼 함수
+  function applyGemSlot(manualIdx, slotIdx, type, value) {
+    const typeSelect = document.getElementById(`d${manualIdx}_slot_type_${slotIdx}`);
+    const valSelect = document.getElementById(`d${manualIdx}_slot_val_${slotIdx}`);
+    if (typeSelect) {
+      typeSelect.value = type;
+      typeSelect.dispatchEvent(new Event('change'));
+      setTimeout(() => { if (valSelect) valSelect.value = value; }, 50);
+    }
+  }
+
+  // ===== Optimize 모드 계산 =====
+  function calcAutoOptimizeMode(selectedAcc, gemBase, pendantCombinations, pendantVer, pendantMode, manualPendantStr, pot, col, ENCHANT, inventoryCount) {
     const resultBox = document.getElementById("autoResult");
 
     // 각 드래곤에 대해 각 장신구의 최적 B값 계산
@@ -1765,7 +1815,8 @@
 
     // 헝가리안 알고리즘 대신 그리디 방식으로 최적 배분
     // (드래곤 수가 적으면 충분히 효과적)
-    const usedAcc = new Set();
+    // 각 장신구는 inventoryCount 개까지 사용 가능
+    const accUsageCount = new Map(); // accIdx -> 사용 횟수
     const assignments = [];
 
     // 모든 (드래곤, 장신구) 조합을 B값 기준으로 정렬
@@ -1779,13 +1830,14 @@
     });
     allPairs.sort((a, b) => b.bestB - a.bestB);
 
-    // 그리디하게 배분 (각 드래곤에 하나의 장신구)
+    // 그리디하게 배분 (각 드래곤에 하나의 장신구, 장신구는 inventoryCount개까지 할당 가능)
     const assignedDragons = new Set();
     for (const pair of allPairs) {
-      if (!assignedDragons.has(pair.dragonIdx) && !usedAcc.has(pair.accIdx)) {
+      const currentUsage = accUsageCount.get(pair.accIdx) || 0;
+      if (!assignedDragons.has(pair.dragonIdx) && currentUsage < inventoryCount) {
         assignments.push(pair);
         assignedDragons.add(pair.dragonIdx);
-        usedAcc.add(pair.accIdx);
+        accUsageCount.set(pair.accIdx, currentUsage + 1);
       }
       if (assignedDragons.size >= AppState.dragons.length) break;
     }
@@ -1803,12 +1855,13 @@
     window._lastAutoResults = allResults;
 
     // 결과 출력
+    const invLabel = inventoryCount > 1 ? ` (장신구당 ${inventoryCount}개 보유)` : '';
     let outputHtml = `<div style="background:#fff3e0;padding:10px;border-radius:8px;margin-bottom:15px;">
-      <strong style="color:#e65100;">🔀 장신구 비공유 모드</strong>
-      <div style="font-size:13px;color:#666;margin-top:4px;">각 드래곤에 다른 장신구가 배분됩니다.</div>
+      <strong style="color:#e65100;">🔀 Optimize 모드${invLabel}</strong>
+      <div style="font-size:13px;color:#666;margin-top:4px;">드래곤들에게 장신구를 최적 배분합니다.${inventoryCount > 1 ? ' (같은 장신구 중복 배분 가능)' : ''}</div>
     </div>`;
 
-    let outputText = '=== 장신구 비공유 모드 ===\n';
+    let outputText = `=== Optimize 모드${invLabel} ===\n`;
     let totalB = 0;
 
     assignments.forEach((assign, idx) => {
@@ -1850,9 +1903,10 @@
       year: 'numeric', month: '2-digit', day: '2-digit',
       hour: '2-digit', minute: '2-digit', second: '2-digit'
     });
+    const modeLabel = `Optimize 모드${invLabel}`;
     const separator = resultStorage.textContent.trim() ?
-      `\n\n${'='.repeat(80)}\n[${timestamp}] 새로운 계산 결과 (비공유 모드)\n${'='.repeat(80)}\n\n` :
-      `[${timestamp}] 계산 결과 (비공유 모드)\n${'='.repeat(80)}\n\n`;
+      `\n\n${'='.repeat(80)}\n[${timestamp}] 새로운 계산 결과 (${modeLabel})\n${'='.repeat(80)}\n\n` :
+      `[${timestamp}] 계산 결과 (${modeLabel})\n${'='.repeat(80)}\n\n`;
     resultStorage.textContent = resultStorage.textContent + separator + outputText;
   }
 
@@ -2139,142 +2193,6 @@
     // 선택된 탭 활성화
     document.querySelector(`#manualDragonTabs .dragon-tab[data-dragon-idx="${dragonIdx}"]`)?.classList.add('active');
     document.getElementById(`manualPanel_${dragonIdx}`)?.classList.add('active');
-  }
-
-  // 기존 호환성을 위한 renderAll
-  function renderAll(count){
-    // 초기화
-    ManualDragonState.dragons = [];
-    ManualDragonState.nextId = 1;
-
-    for (let i = 0; i < count; i++) {
-      const dragon = new ManualDragonConfig(ManualDragonState.nextId++, '9.0', '공격형');
-      dragon.displayNumber = i + 1;
-      ManualDragonState.dragons.push(dragon);
-    }
-    renderAllManual();
-    updateManualDragonCount();
-  }
-
-  function renderOneInput(idx, dragonConfig = null){
-    const inputsWrap = document.getElementById('inputsWrap');
-    const box = document.createElement('div');
-    box.className = 'dragon-input';
-    box.id = `dragonInput_${idx}`;
-    box.style.cssText = 'border:1px solid var(--border);background:#fff;border-radius:8px;padding:12px';
-
-    // 드래곤 ID 찾기 (삭제용)
-    const dragonId = dragonConfig ? dragonConfig.id : null;
-    const showDelete = ManualDragonState.dragons.length > 1;
-
-    box.innerHTML = `
-      <div class="row" style="justify-content:space-between;">
-        <div style="display:flex;gap:10px;align-items:center;">
-          <strong style="font-size:16px;color:var(--accent);">드래곤 ${idx}</strong>
-          <label>이름 <input id="d${idx}_name" type="text" style="width:120px;"></label>
-        </div>
-        ${showDelete && dragonId ? `<button class="btn-remove" onclick="removeManualDragon(${dragonId})">삭제</button>` : ''}
-      </div>
-
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;">
-        <fieldset>
-          <legend>등급 / 타입</legend>
-          <div class="row">
-            <label>등급
-              <select id="d${idx}_m_level">
-                <option value="7.0" ${dragonConfig?.grade === '7.0' ? 'selected' : ''}>7.0</option>
-                <option value="8.0" ${dragonConfig?.grade === '8.0' ? 'selected' : ''}>8.0</option>
-                <option value="9.0" ${!dragonConfig || dragonConfig?.grade === '9.0' ? 'selected' : ''}>9.0</option>
-              </select>
-            </label>
-            <label>타입
-              <select id="d${idx}_m_type">
-                <option ${dragonConfig?.type === '공격형' ? 'selected' : ''}>공격형</option>
-                <option ${dragonConfig?.type === '방어형' ? 'selected' : ''}>방어형</option>
-                <option ${dragonConfig?.type === '체력형' ? 'selected' : ''}>체력형</option>
-                <option ${dragonConfig?.type === '공방형' ? 'selected' : ''}>공방형</option>
-                <option ${dragonConfig?.type === '체공형' ? 'selected' : ''}>체공형</option>
-                <option ${dragonConfig?.type === '체방형' ? 'selected' : ''}>체방형</option>
-              </select>
-            </label>
-          </div>
-        </fieldset>
-
-        <fieldset>
-          <legend>장신구 선택</legend>
-          <div class="row">
-            <select id="d${idx}_acc_select" onchange="onManualAccessoryChange(${idx}, this.value)" style="width:100%;">
-              <option value="">-- 장신구 선택 --</option>
-              ${renderAccessoryOptions(dragonConfig?.accessoryId)}
-            </select>
-          </div>
-          <div class="row" style="margin-top:6px;">
-            <span class="small">또는 직접 입력:</span>
-          </div>
-          <div class="row">
-            HP <input id="d${idx}_m_acc_hp" type="number" value="0" style="width:60px">%
-            ATK <input id="d${idx}_m_acc_atk" type="number" value="0" style="width:60px">%
-            DEF <input id="d${idx}_m_acc_df" type="number" value="0" style="width:60px">%
-          </div>
-        </fieldset>
-      </div>
-
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;">
-        <fieldset>
-          <legend>젬 슬롯 (5개)</legend>
-          <div id="d${idx}_gem_slots"></div>
-        </fieldset>
-
-        <fieldset>
-          <legend>인첸트 / 펜던트 (%)</legend>
-          <div class="row">
-            <strong>인첸트</strong>
-            HP <input id="d${idx}_m_ench_hp" type="number" value="0" style="width:50px">
-            ATK <input id="d${idx}_m_ench_atk" type="number" value="0" style="width:50px">
-            DEF <input id="d${idx}_m_ench_df" type="number" value="0" style="width:50px">
-          </div>
-          <div class="row" style="margin-top:6px;">
-            <strong>펜던트</strong>
-            HP <input id="d${idx}_m_pend_hp" type="number" value="0" style="width:50px">
-            ATK <input id="d${idx}_m_pend_atk" type="number" value="0" style="width:50px">
-            DEF <input id="d${idx}_m_pend_df" type="number" value="0" style="width:50px">
-          </div>
-        </fieldset>
-      </div>
-
-      <fieldset style="margin-top:12px;">
-        <legend>정령 / 버프 / 디버프</legend>
-        <div style="font-weight:700;margin-bottom:6px">(HP / ATK / DEF)</div>
-        <div class="row-spirit"><strong>정령 + (플옵)</strong>
-          <input id="d${idx}_sf_hp" type="number" value="0">
-          <input id="d${idx}_sf_atk" type="number" value="0">
-          <input id="d${idx}_sf_df" type="number" value="0">
-        </div>
-        <div class="row-spirit"><strong>정령 % (퍼옵)</strong>
-          <input id="d${idx}_sp_hp" type="number" value="0">
-          <input id="d${idx}_sp_atk" type="number" value="0">
-          <input id="d${idx}_sp_df" type="number" value="0">
-          <span class="small">% 입력</span>
-        </div>
-        <div class="row-spirit"><strong>정령 부가옵</strong>
-          <input id="d${idx}_se_hp" type="number" value="0">
-          <input id="d${idx}_se_atk" type="number" value="0">
-          <input id="d${idx}_se_df" type="number" value="0">
-        </div>
-        <div class="row-spirit"><strong>버프 (%)</strong>
-          <input id="d${idx}_bf_hp" type="number" value="0">
-          <input id="d${idx}_bf_atk" type="number" value="0">
-          <input id="d${idx}_bf_df" type="number" value="0">
-        </div>
-        <div class="row-spirit"><strong>디버프 (%)</strong>
-          <input id="d${idx}_db_hp" type="number" value="0">
-          <input id="d${idx}_db_atk" type="number" value="0">
-          <input id="d${idx}_db_df" type="number" value="0">
-        </div>
-      </fieldset>
-    `;
-    inputsWrap.appendChild(box);
-    renderGems(idx);
   }
 
   // 장신구 옵션 렌더링 (중복 방지 포함)
