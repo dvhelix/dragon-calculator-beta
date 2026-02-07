@@ -268,7 +268,6 @@
     <h2>드래곤 비벨/이벨 통합 계산기</h2>
     <div class="modebar">
       <button class="tab-btn active" id="btnAuto">자동 계산기</button>
-      <button class="tab-btn" id="btnResult">예측기 결과</button>
       <button class="tab-btn" id="btnManual">수동 계산기</button>
       <button class="tab-btn" id="btnServer">저장 서버</button>
     </div>
@@ -426,17 +425,6 @@
         </fieldset>
       </div>
     </div>
-  </div>
-
-  <div id="resultCalc" class="calc-container">
-    <h3 style="margin:0 0 16px">예측기 결과 (누적)</h3>
-
-    <div class="toolbar" style="margin-bottom:16px">
-      <button class="btn" type="button" onclick="downloadAllResults()">전체 저장 (.txt)</button>
-      <button class="btn" type="button" onclick="clearAllResults()" style="background:#ff6b6b;color:#fff;border-color:#ff6b6b;">전체 삭제</button>
-    </div>
-
-    <pre id="resultStorage" class="result" style="min-height:400px"></pre>
   </div>
 
   <div id="manualCalc" class="calc-container">
@@ -1476,7 +1464,7 @@
 
     // 결과 패널 생성
     let panelsHtml = '';
-    let outputText = '';
+    let outputText = '순위\t타입\t장신구\t젬\t펜던트\t인첸트\tHP\tATK\tDEF\tE\tB\n';
 
     allResults.forEach((dragonResult, dragonIdx) => {
       panelsHtml += `<div class="dragon-settings-panel ${dragonIdx === 0 ? 'active' : ''}" id="resultPanel_${dragonIdx}">`;
@@ -1484,9 +1472,7 @@
       panelsHtml += `★ 드래곤 ${dragonResult.dragonNumber} (${dragonResult.dragonGrade} / ${dragonResult.dragonType})`;
       panelsHtml += `</div>`;
 
-      outputText += `\n${'━'.repeat(60)}\n`;
-      outputText += `★ 드래곤 ${dragonResult.dragonNumber} (${dragonResult.dragonGrade} / ${dragonResult.dragonType})\n`;
-      outputText += `${'━'.repeat(60)}\n`;
+      outputText += `\n[드래곤 ${dragonResult.dragonNumber}] ${dragonResult.dragonGrade} / ${dragonResult.dragonType}\n`;
 
       dragonResult.results.forEach((r, i) => {
         panelsHtml += `
@@ -1499,12 +1485,10 @@
               HP=<strong>${r.finalStats.hp}</strong> | ATK=<strong>${r.finalStats.atk}</strong> | DEF=<strong>${r.finalStats.df}</strong> |
               E=<strong>${r.eValue.toFixed(0)}</strong> | B=<strong style="color:#d32f2f;">${(r.B/1e6).toFixed(3)}</strong>
             </div>
-            <div style="font-size:11px;color:#999;margin-top:4px;">클릭하여 수동계산기에 적용</div>
           </div>
         `;
 
-        outputText += `[${i + 1}위] ${r.dragonType} | ${r.accessory} | 젬: ${r.gems} | 펜던트: ${r.pendant} | 인첸트: ${r.enchant}\n`;
-        outputText += `HP=${r.finalStats.hp} | ATK=${r.finalStats.atk} | DEF=${r.finalStats.df} | E=${r.eValue.toFixed(0)} | B=${(r.B/1e6).toFixed(3)}\n\n`;
+        outputText += `${i + 1}\t${r.dragonType}\t${r.accessory}\t${r.gems}\t${r.pendant}\t${r.enchant}\t${r.finalStats.hp}\t${r.finalStats.atk}\t${r.finalStats.df}\t${r.eValue.toFixed(0)}\t${(r.B/1e6).toFixed(3)}\n`;
       });
 
       panelsHtml += `</div>`;
@@ -1661,11 +1645,12 @@
       document.getElementById(`d${manualIdx}_db_df`).value = appDragon.debuff.df;
     }
 
-    alert(`드래곤 ${manualIdx}에 [${resultIdx + 1}위] 결과가 적용되었습니다.\n수동계산기 탭에서 확인해주세요.`);
-
-    // 수동계산기 탭으로 전환 및 해당 드래곤 탭 활성화
-    switchMode('manual');
-    switchManualDragonTab(manualIdx);
+    // 적용 완료 표시 (탭 이동 없이)
+    const resultItem = event?.target?.closest('.result-item');
+    if (resultItem) {
+      resultItem.style.background = '#c8e6c9';
+      setTimeout(() => { resultItem.style.background = '#f8f9fa'; }, 1000);
+    }
   }
 
   // 젬 슬롯 적용 헬퍼 함수
@@ -1813,7 +1798,7 @@
       <div style="font-size:13px;color:#666;margin-top:4px;">드래곤들에게 장신구를 최적 배분합니다.</div>
     </div>`;
 
-    let outputText = `=== Optimize 모드 ===\n`;
+    let outputText = `=== Optimize 모드 ===\n드래곤\t타입\t장신구\t젬\t펜던트\t인첸트\tHP\tATK\tDEF\tE\tB\n`;
     let totalB = 0;
 
     assignments.forEach((assign, idx) => {
@@ -1834,11 +1819,10 @@
             HP=<strong>${r.finalStats.hp}</strong> | ATK=<strong>${r.finalStats.atk}</strong> | DEF=<strong>${r.finalStats.df}</strong> |
             E=<strong>${r.eValue.toFixed(0)}</strong> | B=<strong style="color:#d32f2f;">${(r.B/1e6).toFixed(3)}</strong>
           </div>
-          <div style="font-size:11px;color:#999;margin-top:4px;">클릭하여 수동계산기에 적용</div>
         </div>
       </div>`;
 
-      outputText += `\n드래곤 ${r.dragonNumber}: ${r.accessory} → B=${(r.B/1e6).toFixed(3)}\n`;
+      outputText += `${r.dragonNumber}\t${r.dragonType}\t${r.accessory}\t${r.gems}\t${r.pendant}\t${r.enchant}\t${r.finalStats.hp}\t${r.finalStats.atk}\t${r.finalStats.df}\t${r.eValue.toFixed(0)}\t${(r.B/1e6).toFixed(3)}\n`;
     });
 
     outputHtml += `<div style="background:#e8f5e9;padding:15px;border-radius:8px;margin-top:10px;text-align:center;">
@@ -1875,11 +1859,11 @@
       alert("저장할 결과가 없습니다.");
       return;
     }
-    const blob = new Blob([text], {type: "text/plain;charset=utf-8"});
+    const blob = new Blob([text], {type: "text/tab-separated-values;charset=utf-8"});
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "dragon_results_all.txt";
+    a.download = "dragon_results_all.tsv";
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -1889,10 +1873,10 @@
   function downloadTxt(){
     const text=document.getElementById("autoResult").textContent||"";
     if(!text.trim()) return;
-    const blob=new Blob([text],{type:"text/plain;charset=utf-8"});
+    const blob=new Blob([text],{type:"text/tab-separated-values;charset=utf-8"});
     const url=URL.createObjectURL(blob);
     const a=document.createElement("a");
-    a.href=url; a.download="dragon_result.txt";
+    a.href=url; a.download="dragon_result.tsv";
     document.body.appendChild(a); a.click(); a.remove();
     URL.revokeObjectURL(url);
   }
@@ -2028,10 +2012,7 @@
 
     panel.innerHTML = `
       <div class="row" style="justify-content:space-between;margin-bottom:12px;">
-        <div style="display:flex;gap:10px;align-items:center;">
-          <strong style="font-size:16px;color:var(--accent);">드래곤 ${idx}</strong>
-          <label>이름 <input id="d${idx}_name" type="text" style="width:120px;"></label>
-        </div>
+        <strong style="font-size:16px;color:var(--accent);">드래곤 ${idx}</strong>
         ${showDelete && dragonId ? `<button class="btn-remove" onclick="removeManualDragon(${dragonId})">삭제</button>` : ''}
       </div>
 
@@ -2291,11 +2272,11 @@ function renderOneResult(idx){
 }
 
   function setText(id, v){ const el=document.getElementById(id); if(el) el.textContent=v; }
+  function num(id){ return Number(document.getElementById(id)?.value||0); }
 
   // ===== 수동 계산기 =====
   function manualCalcOne(idx){
-    const nm = (document.getElementById(`d${idx}_name`).value||'').trim();
-    setText(`d${idx}_name_display`, nm ? nm : `드래곤 ${idx}`);
+    setText(`d${idx}_name_display`, `드래곤 ${idx}`);
 
     const lvl = document.getElementById(`d${idx}_m_level`).value;
     const type = document.getElementById(`d${idx}_m_type`).value;
@@ -2392,79 +2373,52 @@ function renderOneResult(idx){
   }
 
   const autoDiv=document.getElementById('autoCalc');
-  const resultDiv=document.getElementById('resultCalc');
   const manualDiv=document.getElementById('manualCalc');
   const serverDiv=document.getElementById('serverCalc');
   const btnAuto=document.getElementById('btnAuto');
-  const btnResult=document.getElementById('btnResult');
   const btnManual=document.getElementById('btnManual');
   const btnServer=document.getElementById('btnServer');
 
   // 각 모드의 독립적인 스크롤 위치 저장
   let autoScrollPos = 0;
-  let resultScrollPos = 0;
   let manualScrollPos = 0;
   let serverScrollPos = 0;
 
   // ===== UI 모드 전환 =====
   function switchMode(mode){
     if(mode==='auto'){
-      resultScrollPos = window.scrollY;
       manualScrollPos = window.scrollY;
       serverScrollPos = window.scrollY;
 
       autoDiv.classList.add('active');
-      resultDiv.classList.remove('active');
       manualDiv.classList.remove('active');
       serverDiv.classList.remove('active');
       btnAuto.classList.add('active');
-      btnResult.classList.remove('active');
       btnManual.classList.remove('active');
       btnServer.classList.remove('active');
 
       window.scrollTo(0, autoScrollPos);
-    }else if(mode==='result'){
-      autoScrollPos = window.scrollY;
-      manualScrollPos = window.scrollY;
-      serverScrollPos = window.scrollY;
-
-      resultDiv.classList.add('active');
-      autoDiv.classList.remove('active');
-      manualDiv.classList.remove('active');
-      serverDiv.classList.remove('active');
-      btnResult.classList.add('active');
-      btnAuto.classList.remove('active');
-      btnManual.classList.remove('active');
-      btnServer.classList.remove('active');
-
-      window.scrollTo(0, resultScrollPos);
     }else if(mode==='manual'){
       autoScrollPos = window.scrollY;
-      resultScrollPos = window.scrollY;
       serverScrollPos = window.scrollY;
 
       manualDiv.classList.add('active');
       autoDiv.classList.remove('active');
-      resultDiv.classList.remove('active');
       serverDiv.classList.remove('active');
       btnManual.classList.add('active');
       btnAuto.classList.remove('active');
-      btnResult.classList.remove('active');
       btnServer.classList.remove('active');
 
       window.scrollTo(0, manualScrollPos);
     }else if(mode==='server'){
       autoScrollPos = window.scrollY;
-      resultScrollPos = window.scrollY;
       manualScrollPos = window.scrollY;
 
       serverDiv.classList.add('active');
       autoDiv.classList.remove('active');
-      resultDiv.classList.remove('active');
       manualDiv.classList.remove('active');
       btnServer.classList.add('active');
       btnAuto.classList.remove('active');
-      btnResult.classList.remove('active');
       btnManual.classList.remove('active');
 
       window.scrollTo(0, serverScrollPos);
@@ -2472,7 +2426,6 @@ function renderOneResult(idx){
     }
   }
   btnAuto.onclick=()=>switchMode('auto');
-  btnResult.onclick=()=>switchMode('result');
   btnManual.onclick=()=>switchMode('manual');
   btnServer.onclick=()=>switchMode('server');
 
@@ -3228,7 +3181,6 @@ function renderOneResult(idx){
     ManualDragonState.dragons.forEach(dragon => {
       const i = dragon.displayNumber;
       const dragonData = {
-        name: document.getElementById(`d${i}_name`)?.value || '',
         level: document.getElementById(`d${i}_m_level`)?.value || '9.0',
         type: document.getElementById(`d${i}_m_type`)?.value || '공격형',
         // 계산된 최종 결과값
