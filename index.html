@@ -421,6 +421,7 @@
         <!-- 결과 -->
         <fieldset>
           <legend>계산 결과</legend>
+          <div style="font-size:12px;color:#666;margin-bottom:8px;">결과를 클릭하면 수동계산기로 값이 전송됩니다.</div>
           <pre id="autoResult" class="result"></pre>
         </fieldset>
       </div>
@@ -571,7 +572,6 @@
       this.displayNumber = 0;
       this.grade = grade;      // "7.0" | "8.0" | "9.0"
       this.type = type;        // "공격형" | "방어형" | etc.
-      this.accessoryId = null;
       this.pendant = { hp: 0, atk: 0, df: 0 };
       this.spirit = {
         flat: { hp: 0, atk: 0, df: 0 },
@@ -587,7 +587,6 @@
     dragons: [],
     maxDragons: 9,
     gems: { hp: 156, atk: 39, df: 39 },
-    accessoryAllocation: new Map(),
     nextDragonId: 1
   };
 
@@ -614,13 +613,6 @@
   function removeDragon(dragonId) {
     const index = AppState.dragons.findIndex(d => d.id === dragonId);
     if (index === -1) return;
-
-    const dragon = AppState.dragons[index];
-
-    // 장신구 해제
-    if (dragon.accessoryId) {
-      AppState.accessoryAllocation.delete(dragon.accessoryId);
-    }
 
     // 드래곤 제거
     AppState.dragons.splice(index, 1);
@@ -894,38 +886,6 @@
         </div>
       `;
     }
-  }
-
-  // ===== 장신구 중복 방지 =====
-  function allocateAccessory(dragonId, accId) {
-    const dragon = AppState.dragons.find(d => d.id === dragonId);
-    if (!dragon) return false;
-
-    // 이전 장착 해제
-    if (dragon.accessoryId) {
-      AppState.accessoryAllocation.delete(dragon.accessoryId);
-    }
-
-    // 빈 값이면 해제만
-    if (!accId || accId === '') {
-      dragon.accessoryId = null;
-      return true;
-    }
-
-    // 중복 체크
-    if (AppState.accessoryAllocation.has(accId)) {
-      const allocatedDragonId = AppState.accessoryAllocation.get(accId);
-      if (allocatedDragonId !== dragonId) {
-        const allocatedDragon = AppState.dragons.find(d => d.id === allocatedDragonId);
-        alert(`드래곤 ${allocatedDragon?.displayNumber || '?'}에 이미 장착됨`);
-        return false;
-      }
-    }
-
-    // 할당
-    AppState.accessoryAllocation.set(accId, dragonId);
-    dragon.accessoryId = accId;
-    return true;
   }
 
   // 드래곤 기본 스탯 (등급별/타입별)
@@ -1437,7 +1397,14 @@
                   pendant: `${pendantLabel} (${pendantSlotStr})`,
                   enchant: `${enchantLabel} +${ENCHANT}%`,
                   finalStats,
-                  eValue
+                  eValue,
+                  spirit: {
+                    flat: { hp: dragonConfig.spirit.flat.hp, atk: dragonConfig.spirit.flat.atk, df: dragonConfig.spirit.flat.df },
+                    pct: { hp: dragonConfig.spirit.pct.hp, atk: dragonConfig.spirit.pct.atk, df: dragonConfig.spirit.pct.df },
+                    extra: { hp: dragonConfig.spirit.extra.hp, atk: dragonConfig.spirit.extra.atk, df: dragonConfig.spirit.extra.df }
+                  },
+                  buff: { hp: dragonConfig.buff.hp, atk: dragonConfig.buff.atk, df: dragonConfig.buff.df },
+                  debuff: { hp: dragonConfig.debuff.hp, atk: dragonConfig.debuff.atk, df: dragonConfig.debuff.df }
                 });
               }
             }
@@ -1481,12 +1448,14 @@
       panelsHtml += `</div>`;
 
       dragonResult.results.forEach((r, i) => {
+        const spiritStr = formatSpiritStr(r.spirit);
         panelsHtml += `
           <div class="result-item" onclick="applyResultToManual(${dragonIdx}, ${i})"
                style="background:#f8f9fa;padding:10px 15px;border:1px solid #e0e0e0;border-top:none;cursor:pointer;transition:background 0.2s;"
                onmouseover="this.style.background='#e3f2fd'" onmouseout="this.style.background='#f8f9fa'">
             <div style="font-weight:600;color:#1565c0;">[${i + 1}위] ${r.dragonType} | ${r.accessory}</div>
             <div style="font-size:13px;color:#666;">젬: ${r.gems} | 펜던트: ${r.pendant} | 인첸트: ${r.enchant}</div>
+            <div style="font-size:13px;color:#9c27b0;">정령: ${spiritStr}</div>
             <div style="font-size:13px;margin-top:4px;">
               HP=<strong>${r.finalStats.hp}</strong> | ATK=<strong>${r.finalStats.atk}</strong> | DEF=<strong>${r.finalStats.df}</strong> |
               E=<strong>${r.eValue.toFixed(0)}</strong> | B=<strong style="color:#d32f2f;">${(r.B/1e6).toFixed(3)}</strong>
@@ -1499,6 +1468,25 @@
     });
 
     resultBox.innerHTML = tabsHtml + panelsHtml;
+  }
+
+  // 정령 값을 문자열로 포맷하는 함수
+  function formatSpiritStr(spirit) {
+    if (!spirit) return '-';
+    const parts = [];
+    // 플랫 값
+    if (spirit.flat.hp > 0) parts.push(`HP+${spirit.flat.hp}`);
+    if (spirit.flat.atk > 0) parts.push(`ATK+${spirit.flat.atk}`);
+    if (spirit.flat.df > 0) parts.push(`DEF+${spirit.flat.df}`);
+    // 퍼센트 값
+    if (spirit.pct.hp > 0) parts.push(`HP${spirit.pct.hp}%`);
+    if (spirit.pct.atk > 0) parts.push(`ATK${spirit.pct.atk}%`);
+    if (spirit.pct.df > 0) parts.push(`DEF${spirit.pct.df}%`);
+    // 부가옵
+    if (spirit.extra.hp > 0) parts.push(`(HP+${spirit.extra.hp})`);
+    if (spirit.extra.atk > 0) parts.push(`(ATK+${spirit.extra.atk})`);
+    if (spirit.extra.df > 0) parts.push(`(DEF+${spirit.extra.df})`);
+    return parts.length > 0 ? parts.join(' ') : '-';
   }
 
   // 결과 탭 전환
@@ -1623,24 +1611,27 @@
       document.getElementById(`d${manualIdx}_m_pend_df`).value = pendDf;
     }
 
-    // AppState에서 정령/버프/디버프 복사
-    const appDragon = AppState.dragons[dragonIdx];
-    if (appDragon) {
-      document.getElementById(`d${manualIdx}_sf_hp`).value = appDragon.spirit.flat.hp;
-      document.getElementById(`d${manualIdx}_sf_atk`).value = appDragon.spirit.flat.atk;
-      document.getElementById(`d${manualIdx}_sf_df`).value = appDragon.spirit.flat.df;
-      document.getElementById(`d${manualIdx}_sp_hp`).value = appDragon.spirit.pct.hp;
-      document.getElementById(`d${manualIdx}_sp_atk`).value = appDragon.spirit.pct.atk;
-      document.getElementById(`d${manualIdx}_sp_df`).value = appDragon.spirit.pct.df;
-      document.getElementById(`d${manualIdx}_se_hp`).value = appDragon.spirit.extra.hp;
-      document.getElementById(`d${manualIdx}_se_atk`).value = appDragon.spirit.extra.atk;
-      document.getElementById(`d${manualIdx}_se_df`).value = appDragon.spirit.extra.df;
-      document.getElementById(`d${manualIdx}_bf_hp`).value = appDragon.buff.hp;
-      document.getElementById(`d${manualIdx}_bf_atk`).value = appDragon.buff.atk;
-      document.getElementById(`d${manualIdx}_bf_df`).value = appDragon.buff.df;
-      document.getElementById(`d${manualIdx}_db_hp`).value = appDragon.debuff.hp;
-      document.getElementById(`d${manualIdx}_db_atk`).value = appDragon.debuff.atk;
-      document.getElementById(`d${manualIdx}_db_df`).value = appDragon.debuff.df;
+    // 결과 객체에서 정령/버프/디버프 복사
+    if (result.spirit) {
+      document.getElementById(`d${manualIdx}_sf_hp`).value = result.spirit.flat.hp;
+      document.getElementById(`d${manualIdx}_sf_atk`).value = result.spirit.flat.atk;
+      document.getElementById(`d${manualIdx}_sf_df`).value = result.spirit.flat.df;
+      document.getElementById(`d${manualIdx}_sp_hp`).value = result.spirit.pct.hp;
+      document.getElementById(`d${manualIdx}_sp_atk`).value = result.spirit.pct.atk;
+      document.getElementById(`d${manualIdx}_sp_df`).value = result.spirit.pct.df;
+      document.getElementById(`d${manualIdx}_se_hp`).value = result.spirit.extra.hp;
+      document.getElementById(`d${manualIdx}_se_atk`).value = result.spirit.extra.atk;
+      document.getElementById(`d${manualIdx}_se_df`).value = result.spirit.extra.df;
+    }
+    if (result.buff) {
+      document.getElementById(`d${manualIdx}_bf_hp`).value = result.buff.hp;
+      document.getElementById(`d${manualIdx}_bf_atk`).value = result.buff.atk;
+      document.getElementById(`d${manualIdx}_bf_df`).value = result.buff.df;
+    }
+    if (result.debuff) {
+      document.getElementById(`d${manualIdx}_db_hp`).value = result.debuff.hp;
+      document.getElementById(`d${manualIdx}_db_atk`).value = result.debuff.atk;
+      document.getElementById(`d${manualIdx}_db_df`).value = result.debuff.df;
     }
 
     // 적용 완료 표시 (탭 이동 없이)
@@ -1733,7 +1724,14 @@
                     pendant: `${pendantVer === "v3" ? "수동입력" : pendantMode} (${pendantSlotStr})`,
                     enchant: `${enchantLabel} +${ENCHANT}%`,
                     finalStats,
-                    eValue
+                    eValue,
+                    spirit: {
+                      flat: { hp: dragonConfig.spirit.flat.hp, atk: dragonConfig.spirit.flat.atk, df: dragonConfig.spirit.flat.df },
+                      pct: { hp: dragonConfig.spirit.pct.hp, atk: dragonConfig.spirit.pct.atk, df: dragonConfig.spirit.pct.df },
+                      extra: { hp: dragonConfig.spirit.extra.hp, atk: dragonConfig.spirit.extra.atk, df: dragonConfig.spirit.extra.df }
+                    },
+                    buff: { hp: dragonConfig.buff.hp, atk: dragonConfig.buff.atk, df: dragonConfig.buff.df },
+                    debuff: { hp: dragonConfig.debuff.hp, atk: dragonConfig.debuff.atk, df: dragonConfig.debuff.df }
                   };
                 }
               }
@@ -1791,16 +1789,13 @@
     window._lastAutoResults = allResults;
 
     // 결과 출력
-    let outputHtml = `<div style="background:#fff3e0;padding:10px;border-radius:8px;margin-bottom:15px;">
-      <strong style="color:#e65100;">🔀 Optimize 모드</strong>
-      <div style="font-size:13px;color:#666;margin-top:4px;">드래곤들에게 장신구를 최적 배분합니다.</div>
-    </div>`;
-
+    let outputHtml = '';
     let totalB = 0;
 
     assignments.forEach((assign, idx) => {
       const r = assign.bestResult;
       totalB += r.B;
+      const spiritStr = formatSpiritStr(r.spirit);
 
       outputHtml += `<div style="margin-bottom:15px;">`;
       outputHtml += `<div style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);color:#fff;padding:10px 15px;border-radius:8px 8px 0 0;font-weight:bold;">`;
@@ -1812,6 +1807,7 @@
              onmouseover="this.style.background='#e3f2fd'" onmouseout="this.style.background='#f8f9fa'">
           <div style="font-weight:600;color:#1565c0;">[최적] ${r.dragonType} | ${r.accessory}</div>
           <div style="font-size:13px;color:#666;">젬: ${r.gems} | 펜던트: ${r.pendant} | 인첸트: ${r.enchant}</div>
+          <div style="font-size:13px;color:#9c27b0;">정령: ${spiritStr}</div>
           <div style="font-size:13px;margin-top:4px;">
             HP=<strong>${r.finalStats.hp}</strong> | ATK=<strong>${r.finalStats.atk}</strong> | DEF=<strong>${r.finalStats.df}</strong> |
             E=<strong>${r.eValue.toFixed(0)}</strong> | B=<strong style="color:#d32f2f;">${(r.B/1e6).toFixed(3)}</strong>
@@ -1852,10 +1848,10 @@
       const sheetData = [];
 
       // 헤더 행
-      sheetData.push(['순위', '타입', '장신구', '젬', '펜던트', '인첸트', 'HP', 'ATK', 'DEF', 'E', 'B']);
+      sheetData.push(['순위', '타입', '장신구', '젬', '펜던트', '인첸트', '정령', 'HP', 'ATK', 'DEF', 'E', 'B']);
 
       // 드래곤 정보 행
-      sheetData.push([`${dragonResult.dragonGrade} / ${dragonResult.dragonType}`, '', '', '', '', '', '', '', '', '', '']);
+      sheetData.push([`${dragonResult.dragonGrade} / ${dragonResult.dragonType}`, '', '', '', '', '', '', '', '', '', '', '']);
 
       // 결과 데이터 행
       dragonResult.results.forEach((r, i) => {
@@ -1866,6 +1862,7 @@
           r.gems,
           r.pendant,
           r.enchant,
+          formatSpiritStr(r.spirit),
           r.finalStats.hp,
           r.finalStats.atk,
           r.finalStats.df,
@@ -1885,6 +1882,7 @@
         { wch: 15 },  // 젬
         { wch: 20 },  // 펜던트
         { wch: 12 },  // 인첸트
+        { wch: 35 },  // 정령
         { wch: 8 },   // HP
         { wch: 8 },   // ATK
         { wch: 8 },   // DEF
