@@ -761,6 +761,11 @@
       <div class="dragon-tabs">${tabsHtml}</div>
       ${panelsHtml}
     `;
+
+    // 각 드래곤의 정령 값 초기 계산
+    AppState.dragons.forEach(d => {
+      calculateSpiritFromSlots(d.id);
+    });
   }
 
   function toggleSpiritInputMode(dragonId) {
@@ -1516,6 +1521,7 @@
     const manualIdx = dragonResult.dragonNumber;
 
     // 수동계산기에 드래곤이 없으면 자동 추가
+    let needsRender = false;
     while (ManualDragonState.dragons.length < manualIdx) {
       if (ManualDragonState.dragons.length >= ManualDragonState.maxDragons) {
         alert(`최대 ${ManualDragonState.maxDragons}마리까지만 추가할 수 있습니다.`);
@@ -1524,9 +1530,12 @@
       const newDragon = new ManualDragonConfig(ManualDragonState.nextId++, dragonResult.dragonGrade, dragonResult.dragonType);
       newDragon.displayNumber = ManualDragonState.dragons.length + 1;
       ManualDragonState.dragons.push(newDragon);
+      needsRender = true;
     }
-    renderAllManual();
-    updateManualDragonCount();
+    if (needsRender) {
+      renderAllManual();
+      updateManualDragonCount();
+    }
 
     // 등급/타입 적용
     const levelEl = document.getElementById(`d${manualIdx}_m_level`);
@@ -2077,6 +2086,12 @@
         ManualDragonState.selectedForResult.add(displayNumber);
       }
     } else {
+      // 최소 1개는 선택되어야 함
+      if (ManualDragonState.selectedForResult.size <= 1) {
+        alert('최소 1개의 드래곤은 선택해야 합니다.');
+        updateDragonSelectionPanel(); // 체크박스 상태 복원
+        return;
+      }
       ManualDragonState.selectedForResult.delete(displayNumber);
     }
     updateDragonSelectionPanel();
