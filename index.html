@@ -7,33 +7,44 @@
 <title>드래곤 비벨/이벨 통합 계산기</title>
 <style>
   :root{
-    --bg:#f7f7f9; --ink:#111;
-    --line:#cfcfd6; --accent:#2d6cdf;
-    --black:#000; --grid:#b5b5bd;
+    --bg:#ffffff; --ink:#1a1a1a;
+    --card-bg:#f8f9fa; --border:#e5e7eb;
+    --accent:#3b82f6; --accent-hover:#2563eb;
+    --radius:12px; --radius-sm:8px;
+    --shadow:0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+    --shadow-md:0 4px 6px rgba(0,0,0,0.1), 0 2px 4px rgba(0,0,0,0.06);
   }
-  body{font-family:Consolas,"Noto Sans KR",sans-serif;margin:24px;background:var(--bg);color:var(--ink)}
-  h2{margin:0 0 8px}
-  .hint{color:#666;margin-bottom:14px}
-  .small{color:#888;font-size:12px}
+  body{font-family:system-ui,-apple-system,"Noto Sans KR",sans-serif;margin:24px;background:var(--bg);color:var(--ink);line-height:1.5}
+  h2{margin:0 0 8px;font-weight:700;color:var(--ink)}
+  .hint{color:#6b7280;margin-bottom:14px}
+  .small{color:#9ca3af;font-size:12px}
 
-  .header-fixed{position:sticky;top:0;background:var(--bg);z-index:100;padding:12px 0;border-bottom:2px solid var(--line);margin-bottom:16px}
-  .modebar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:8px}
-  .btn{padding:8px 14px;border:1px solid #999;background:#fff;cursor:pointer;border-radius:6px}
-  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
-  .btn:hover{background:#f0f0f0}
+  .header-fixed{position:sticky;top:0;background:var(--bg);z-index:100;padding:16px 0;border-bottom:1px solid var(--border);margin-bottom:20px}
+  .modebar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+  .tab-btn{padding:10px 20px;border:none;background:transparent;cursor:pointer;border-radius:0;font-size:14px;font-weight:500;color:#6b7280;position:relative;transition:color 0.2s}
+  .tab-btn:hover{color:var(--accent);background:#f3f4f6}
+  .tab-btn.active{color:var(--accent);font-weight:600}
+  .tab-btn.active::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--accent);border-radius:1px}
+  .btn{padding:10px 18px;border:1px solid var(--border);background:#fff;cursor:pointer;border-radius:var(--radius-sm);font-size:14px;font-weight:500;transition:all 0.2s;box-shadow:var(--shadow)}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:var(--shadow-md)}
+  .btn.primary:hover{background:var(--accent-hover);border-color:var(--accent-hover)}
+  .btn:hover{background:#f9fafb;border-color:#d1d5db}
 
   .calc-container{display:none;overflow-y:auto;height:100%}
   .calc-container.active{display:block}
 
-  fieldset{background:#fff;border:1px solid #ccc;padding:12px;margin-bottom:14px;border-radius:8px}
-  legend{font-weight:700}
-  .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:6px}
-  label{display:inline-flex;gap:6px;align-items:center}
-  input[type="number"],select{height:28px;border:1px solid #aaa;border-radius:4px;text-align:center;background:#fff}
-  input[type="text"]{height:28px;border:1px solid #aaa;border-radius:4px;background:#fff;padding:0 8px}
+  fieldset{background:var(--card-bg);border:none;padding:20px;margin-bottom:16px;border-radius:var(--radius);box-shadow:var(--shadow)}
+  legend{font-weight:700;font-size:15px;color:var(--ink);padding:0 4px}
+  .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:8px}
+  label{display:inline-flex;gap:6px;align-items:center;cursor:pointer;font-size:14px}
+  input[type="number"],select{height:36px;border:1px solid var(--border);border-radius:var(--radius-sm);text-align:center;background:#fff;font-size:14px;transition:border-color 0.2s,box-shadow 0.2s}
+  input[type="number"]:focus,select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(59,130,246,0.15)}
+  input[type="text"]{height:36px;border:1px solid var(--border);border-radius:var(--radius-sm);background:#fff;padding:0 12px;font-size:14px;transition:border-color 0.2s,box-shadow 0.2s}
+  input[type="text"]:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(59,130,246,0.15)}
+  input[type="checkbox"],input[type="radio"]{width:18px;height:18px;accent-color:var(--accent)}
 
-  .acc-list{max-height:220px;overflow:auto;border:1px solid #ddd;padding:8px;background:#fcfcfc;border-radius:6px}
-  .toolbar{display:flex;gap:8px;margin:8px 0;flex-wrap:wrap}
+  .acc-list{max-height:220px;overflow:auto;border:1px solid var(--border);padding:12px;background:#fff;border-radius:var(--radius-sm)}
+  .toolbar{display:flex;gap:10px;margin:12px 0;flex-wrap:wrap}
 
   /* 정령/버프/디버프 */
   .row-spirit{
@@ -45,95 +56,106 @@
   }
   .row-spirit strong{text-align:right;padding-right:4px;font-weight:700}
 
-  /* 수동결과 시트 */
-  .results-wrap{margin-top:14px}
-  .results-row{display:inline-flex;gap:12px;align-items:flex-start;flex-wrap:nowrap}
+  /* 수동결과 시트 - 밝은 테마 */
+  .results-wrap{margin-top:16px}
+  .results-row{display:inline-flex;gap:16px;align-items:flex-start;flex-wrap:nowrap}
   .sheet{
-    background:#111; color:#e5e5e5;
-    padding:12px; border-radius:10px;
+    background:#fff; color:var(--ink);
+    padding:16px; border-radius:var(--radius);
     display:inline-block; min-width:530px;
+    box-shadow:var(--shadow-md);
+    border:1px solid var(--border);
   }
   .sheet .name{
-    font-weight:900; font-size:18px; letter-spacing:.5px; margin-bottom:6px; text-align:center;
+    font-weight:700; font-size:18px; letter-spacing:.3px; margin-bottom:10px; text-align:center;
+    color:var(--accent);
   }
   .grid{
     display:grid;
     grid-template-columns: 150px 120px 120px 120px;
-    border:2px solid var(--black);
-    background:#222;
+    border:1px solid var(--border);
+    background:#fff;
+    border-radius:var(--radius-sm);
+    overflow:hidden;
   }
   .cell{
-    border:1px solid var(--grid);
-    padding:6px 8px; line-height:1.15;
-    font-size:13px; background:#1a1a1a;
+    border:1px solid var(--border);
+    padding:8px 10px; line-height:1.3;
+    font-size:13px; background:#fff;
+    color:var(--ink);
   }
-  .cell.h{background:#303030;font-weight:700}
-  .cell.section{background:#2b2b2b;color:#ffe4b5;font-weight:700;text-align:center}
-  .cell.sum{background:#000;border-color:#444;color:#fff;font-size:15px}
-  .cell.big{font-size:22px;font-weight:900;letter-spacing:1px;text-align:center;background:#000}
+  .cell.h{background:#f1f5f9;font-weight:600;color:#475569}
+  .cell.section{background:#e0f2fe;color:#0369a1;font-weight:700;text-align:center}
+  .cell.sum{background:#f8fafc;border-color:var(--border);color:var(--ink);font-size:15px;font-weight:600}
+  .cell.big{font-size:22px;font-weight:700;letter-spacing:1px;text-align:center;background:#eff6ff;color:var(--accent)}
   .center{text-align:center}
   .right{text-align:right}
   pre.result{
-    white-space:pre; background:#111; color:#e5e5e5;
-    padding:12px; border-radius:8px; min-height:220px;
+    white-space:pre; background:#f8fafc; color:var(--ink);
+    padding:16px; border-radius:var(--radius-sm); min-height:220px;
+    border:1px solid var(--border);
+    font-family:'Consolas',monospace;
+    font-size:13px;
+    line-height:1.5;
   }
 
   /* 모바일 반응형 */
   @media (max-width: 768px) {
     body{margin:12px;}
-    .header-fixed{padding:8px 0;}
+    .header-fixed{padding:12px 0;}
     h2{font-size:18px;}
-    .hint{font-size:11px;}
+    .hint{font-size:12px;}
 
-    .modebar{gap:6px;}
-    .btn{padding:6px 10px;font-size:13px;}
+    .modebar{gap:0;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+    .tab-btn{padding:8px 14px;font-size:13px;white-space:nowrap;}
+    .btn{padding:8px 12px;font-size:13px;}
 
-    .row{flex-direction:column;align-items:flex-start;gap:6px;}
+    .row{flex-direction:column;align-items:flex-start;gap:8px;}
     .row label{width:100%;}
 
     .row-spirit{
       grid-template-columns:1fr;
-      gap:6px;
+      gap:8px;
     }
     .row-spirit strong{text-align:left;padding-right:0;margin-bottom:4px;}
     .row-spirit input{width:100%;}
 
-    input[type="number"],select,input[type="text"]{width:100% !important;box-sizing:border-box;}
+    input[type="number"],select,input[type="text"]{width:100% !important;box-sizing:border-box;height:40px;}
 
-    .toolbar{gap:6px;}
-    .toolbar .btn{font-size:11px;padding:6px 8px;}
+    .toolbar{gap:8px;}
+    .toolbar .btn{font-size:12px;padding:8px 10px;}
 
     .acc-list{max-height:180px;font-size:13px;}
 
-    fieldset{padding:10px;}
+    fieldset{padding:14px;border-radius:var(--radius-sm);}
     legend{font-size:14px;}
 
     .sheet{
       min-width:unset;
       width:100%;
-      padding:10px;
+      padding:12px;
       overflow-x:auto;
     }
     .sheet .name{font-size:16px;}
 
     .grid{
       grid-template-columns:80px repeat(3, 1fr);
-      font-size:10px;
+      font-size:11px;
       min-width:320px;
     }
-    .cell{padding:4px 5px;font-size:10px;}
-    .cell.h{font-size:9px;padding:3px 4px;}
-    .cell.big{font-size:14px;}
-    .cell.sum{font-size:11px;}
+    .cell{padding:6px 5px;font-size:11px;}
+    .cell.h{font-size:10px;padding:5px 4px;}
+    .cell.big{font-size:16px;}
+    .cell.sum{font-size:12px;}
     .cell.section{grid-column:1/5 !important;}
 
-    .results-row{flex-direction:column;gap:12px;}
+    .results-row{flex-direction:column;gap:14px;}
 
     #pendant_auto_row{flex-direction:column;align-items:flex-start;}
     #pendant_stats_row{flex-direction:column;align-items:flex-start;}
     #pendant_manual{flex-direction:column;align-items:flex-start;gap:8px;}
 
-    pre.result{font-size:11px;padding:10px;min-height:150px;overflow-x:auto;}
+    pre.result{font-size:12px;padding:12px;min-height:150px;overflow-x:auto;}
   }
 
   /* 모바일에서 세로로 쌓기 */
@@ -149,10 +171,10 @@
   <div class="header-fixed">
     <h2>드래곤 비벨/이벨 통합 계산기</h2>
     <div class="modebar">
-      <button class="btn primary" id="btnAuto">자동 계산기</button>
-      <button class="btn" id="btnResult">예측기 결과</button>
-      <button class="btn" id="btnManual">수동 계산기</button>
-      <button class="btn" id="btnServer">저장 서버</button>
+      <button class="tab-btn active" id="btnAuto">자동 계산기</button>
+      <button class="tab-btn" id="btnResult">예측기 결과</button>
+      <button class="tab-btn" id="btnManual">수동 계산기</button>
+      <button class="tab-btn" id="btnServer">저장 서버</button>
     </div>
     <div class="hint small">모든 입력은 <b>HP / ATK / DEF</b> 순서입니다. · made by 헬릭스</div>
   </div>
@@ -910,7 +932,7 @@
   function renderOneInput(idx){
     const box = document.createElement('div');
     box.className = 'dragon-input';
-    box.style.cssText = 'border:1px solid var(--line);background:#fff;border-radius:8px;padding:12px';
+    box.style.cssText = 'border:1px solid var(--border);background:#fff;border-radius:8px;padding:12px';
     box.innerHTML = `
       <div class="row">
         <strong style="font-size:16px">드래곤 ${idx}</strong>
@@ -1207,10 +1229,10 @@ function renderOneResult(idx){
       resultDiv.classList.remove('active');
       manualDiv.classList.remove('active');
       serverDiv.classList.remove('active');
-      btnAuto.classList.add('primary');
-      btnResult.classList.remove('primary');
-      btnManual.classList.remove('primary');
-      btnServer.classList.remove('primary');
+      btnAuto.classList.add('active');
+      btnResult.classList.remove('active');
+      btnManual.classList.remove('active');
+      btnServer.classList.remove('active');
 
       window.scrollTo(0, autoScrollPos);
     }else if(mode==='result'){
@@ -1222,10 +1244,10 @@ function renderOneResult(idx){
       autoDiv.classList.remove('active');
       manualDiv.classList.remove('active');
       serverDiv.classList.remove('active');
-      btnResult.classList.add('primary');
-      btnAuto.classList.remove('primary');
-      btnManual.classList.remove('primary');
-      btnServer.classList.remove('primary');
+      btnResult.classList.add('active');
+      btnAuto.classList.remove('active');
+      btnManual.classList.remove('active');
+      btnServer.classList.remove('active');
 
       window.scrollTo(0, resultScrollPos);
     }else if(mode==='manual'){
@@ -1237,10 +1259,10 @@ function renderOneResult(idx){
       autoDiv.classList.remove('active');
       resultDiv.classList.remove('active');
       serverDiv.classList.remove('active');
-      btnManual.classList.add('primary');
-      btnAuto.classList.remove('primary');
-      btnResult.classList.remove('primary');
-      btnServer.classList.remove('primary');
+      btnManual.classList.add('active');
+      btnAuto.classList.remove('active');
+      btnResult.classList.remove('active');
+      btnServer.classList.remove('active');
 
       window.scrollTo(0, manualScrollPos);
     }else if(mode==='server'){
@@ -1252,10 +1274,10 @@ function renderOneResult(idx){
       autoDiv.classList.remove('active');
       resultDiv.classList.remove('active');
       manualDiv.classList.remove('active');
-      btnServer.classList.add('primary');
-      btnAuto.classList.remove('primary');
-      btnResult.classList.remove('primary');
-      btnManual.classList.remove('primary');
+      btnServer.classList.add('active');
+      btnAuto.classList.remove('active');
+      btnResult.classList.remove('active');
+      btnManual.classList.remove('active');
 
       window.scrollTo(0, serverScrollPos);
       loadSlotList(); // 슬롯 목록 로드
@@ -1344,7 +1366,7 @@ function renderOneResult(idx){
       Object.keys(slots).forEach(slotId => {
         const slot = slots[slotId];
         const slotBox = document.createElement('div');
-        slotBox.style.cssText = 'border:1px solid var(--line);background:#fff;border-radius:8px;padding:12px;margin-bottom:10px';
+        slotBox.style.cssText = 'border:1px solid var(--border);background:#fff;border-radius:8px;padding:12px;margin-bottom:10px';
 
         const lockIcon = slot.type === 'private' ? '🔒 ' : '';
         const dataCount = slot.data ? slot.data.length : 0;
