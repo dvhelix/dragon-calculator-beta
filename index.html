@@ -271,7 +271,10 @@
       <button class="tab-btn" id="btnManual">수동 계산기</button>
       <button class="tab-btn" id="btnServer">저장 서버</button>
     </div>
-    <div class="hint small">모든 입력은 <b>HP / ATK / DEF</b> 순서입니다. · made by 헬릭스</div>
+    <div class="hint small">
+      모든 입력은 <b>HP / ATK / DEF</b> 순서입니다. · made by 헬릭스
+      <button onclick="openHelpModal()" style="margin-left:12px;padding:4px 12px;background:#667eea;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:12px;">📖 사용법</button>
+    </div>
   </div>
 
   <div id="autoCalc" class="calc-container active">
@@ -1733,7 +1736,8 @@
     if (typeSelect) {
       typeSelect.value = type;
       typeSelect.dispatchEvent(new Event('change'));
-      setTimeout(() => { if (valSelect) valSelect.value = value; }, 50);
+      // 슬롯별로 딜레이를 다르게 해서 충돌 방지
+      setTimeout(() => { if (valSelect) valSelect.value = value; }, 50 * slotIdx);
     }
   }
 
@@ -2119,10 +2123,18 @@
       setVal(`d${idx}_db_atk`, v.dbAtk);
       setVal(`d${idx}_db_df`, v.dbDf);
 
-      // 젬 슬롯 복원
+      // 젬 슬롯 복원 (타입 설정 후 change 이벤트 발생시켜 옵션 생성)
       v.gems.forEach((gem, i) => {
-        setVal(`d${idx}_slot_type_${i+1}`, gem.type);
-        setVal(`d${idx}_slot_val_${i+1}`, gem.val);
+        const typeEl = document.getElementById(`d${idx}_slot_type_${i+1}`);
+        const valEl = document.getElementById(`d${idx}_slot_val_${i+1}`);
+        if (typeEl) {
+          typeEl.value = gem.type;
+          typeEl.dispatchEvent(new Event('change'));
+        }
+        // 옵션 생성 후 값 설정
+        setTimeout(() => {
+          if (valEl) valEl.value = gem.val;
+        }, 10 * (i + 1));
       });
 
       // spiritSlots UI 복원
@@ -3829,6 +3841,112 @@ function renderOneResult(idx){
       console.error('저장 오류:', error);
       alert('저장 중 오류가 발생했습니다.');
     }
+  }
+
+  // ===== 사용법 팝업 =====
+  function openHelpModal() {
+    const modalHtml = `
+      <div id="helpModal" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;">
+        <div style="background:#fff;border-radius:12px;max-width:800px;width:100%;max-height:90vh;overflow-y:auto;position:relative;">
+          <div style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);color:#fff;padding:20px;border-radius:12px 12px 0 0;position:sticky;top:0;z-index:1;">
+            <h2 style="margin:0;font-size:22px;">📖 드래곤 계산기 사용법</h2>
+            <button onclick="closeHelpModal()" style="position:absolute;top:15px;right:15px;background:rgba(255,255,255,0.2);border:none;color:#fff;font-size:24px;cursor:pointer;width:36px;height:36px;border-radius:50%;">×</button>
+          </div>
+
+          <div style="padding:24px;">
+            <!-- 자동 계산기 -->
+            <div style="margin-bottom:24px;">
+              <h3 style="color:#667eea;border-bottom:2px solid #667eea;padding-bottom:8px;margin-bottom:16px;">🔄 자동 계산기</h3>
+              <div style="background:#f8f9fa;padding:16px;border-radius:8px;margin-bottom:12px;">
+                <h4 style="margin:0 0 10px;color:#333;">1. 계산 모드 선택</h4>
+                <ul style="margin:0;padding-left:20px;color:#555;line-height:1.8;">
+                  <li><b>Normal:</b> 선택한 장신구들로 각각 계산</li>
+                  <li><b>Optimize:</b> 드래곤별 최적 장신구 자동 배분</li>
+                </ul>
+              </div>
+              <div style="background:#f8f9fa;padding:16px;border-radius:8px;margin-bottom:12px;">
+                <h4 style="margin:0 0 10px;color:#333;">2. 드래곤 추가</h4>
+                <ul style="margin:0;padding-left:20px;color:#555;line-height:1.8;">
+                  <li>등급(7.0/8.0/9.0)과 타입 선택 후 "드래곤 추가" 클릭</li>
+                  <li>최대 9마리까지 추가 가능</li>
+                  <li>추가된 드래곤 클릭하여 삭제 가능</li>
+                </ul>
+              </div>
+              <div style="background:#f8f9fa;padding:16px;border-radius:8px;margin-bottom:12px;">
+                <h4 style="margin:0 0 10px;color:#333;">3. 설정값 입력</h4>
+                <ul style="margin:0;padding-left:20px;color:#555;line-height:1.8;">
+                  <li><b>젬:</b> HP/ATK/DEF 젬 개수 선택</li>
+                  <li><b>펜던트:</b> 버전/조합 선택 또는 직접 입력</li>
+                  <li><b>장신구:</b> 좌측 목록에서 계산에 포함할 장신구 체크</li>
+                  <li><b>정령:</b> 슬롯별 옵션 선택 또는 직접 입력</li>
+                  <li><b>버프/디버프:</b> 적용중인 % 입력</li>
+                </ul>
+              </div>
+              <div style="background:#e3f2fd;padding:16px;border-radius:8px;">
+                <h4 style="margin:0 0 10px;color:#1565c0;">💡 팁: 결과 클릭</h4>
+                <p style="margin:0;color:#555;">계산 결과를 클릭하면 해당 설정이 <b>수동 계산기</b>에 자동으로 적용됩니다!</p>
+              </div>
+            </div>
+
+            <!-- 수동 계산기 -->
+            <div style="margin-bottom:24px;">
+              <h3 style="color:#667eea;border-bottom:2px solid #667eea;padding-bottom:8px;margin-bottom:16px;">✏️ 수동 계산기</h3>
+              <div style="background:#f8f9fa;padding:16px;border-radius:8px;margin-bottom:12px;">
+                <ul style="margin:0;padding-left:20px;color:#555;line-height:1.8;">
+                  <li>모든 값을 직접 입력하여 계산</li>
+                  <li>자동 계산기 결과 클릭으로 값 가져오기 가능</li>
+                  <li>4마리 이상일 경우 결과에 표시할 드래곤 선택 (최대 3마리)</li>
+                  <li><b>이미지 저장:</b> 계산 결과를 PNG로 저장</li>
+                  <li><b>서버 저장:</b> 결과를 서버에 저장하여 공유</li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- 저장 서버 -->
+            <div style="margin-bottom:24px;">
+              <h3 style="color:#667eea;border-bottom:2px solid #667eea;padding-bottom:8px;margin-bottom:16px;">💾 저장 서버</h3>
+              <div style="background:#f8f9fa;padding:16px;border-radius:8px;">
+                <ul style="margin:0;padding-left:20px;color:#555;line-height:1.8;">
+                  <li><b>슬롯 생성:</b> 공개/비밀 슬롯 생성 가능</li>
+                  <li><b>데이터 조회:</b> 슬롯별 저장된 데이터 확인</li>
+                  <li><b>요약/상세 보기:</b> 표 형식 또는 상세 정보 확인</li>
+                  <li><b>엑셀 저장:</b> 데이터를 엑셀 파일로 다운로드</li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- 용어 설명 -->
+            <div>
+              <h3 style="color:#667eea;border-bottom:2px solid #667eea;padding-bottom:8px;margin-bottom:16px;">📚 용어 설명</h3>
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;">
+                <div style="background:#fff3e0;padding:12px;border-radius:8px;">
+                  <b style="color:#e65100;">E-Value (이벨)</b>
+                  <p style="margin:6px 0 0;font-size:13px;color:#555;">HP + 4×ATK + 4×DEF</p>
+                </div>
+                <div style="background:#fce4ec;padding:12px;border-radius:8px;">
+                  <b style="color:#c2185b;">B-Value (비벨)</b>
+                  <p style="margin:6px 0 0;font-size:13px;color:#555;">HP × ATK × DEF ÷ 10⁶</p>
+                </div>
+                <div style="background:#e8f5e9;padding:12px;border-radius:8px;">
+                  <b style="color:#2e7d32;">플옵 (+)</b>
+                  <p style="margin:6px 0 0;font-size:13px;color:#555;">정령 고정 수치 옵션</p>
+                </div>
+                <div style="background:#e3f2fd;padding:12px;border-radius:8px;">
+                  <b style="color:#1565c0;">퍼옵 (%)</b>
+                  <p style="margin:6px 0 0;font-size:13px;color:#555;">정령 퍼센트 옵션</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+  }
+
+  function closeHelpModal() {
+    const modal = document.getElementById('helpModal');
+    if (modal) modal.remove();
   }
   </script>
 </body>
