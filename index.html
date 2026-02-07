@@ -1234,8 +1234,25 @@
     }, 50);
   }
 
+  // 모든 드래곤의 정령/버프/디버프 값을 UI에서 읽어서 업데이트
+  function syncAllDragonValues() {
+    AppState.dragons.forEach(dragon => {
+      calculateSpiritFromSlots(dragon.id);
+      // 버프/디버프도 UI에서 읽기
+      dragon.buff.hp = Number(document.getElementById(`dragon_${dragon.id}_bf_hp`)?.value || 0);
+      dragon.buff.atk = Number(document.getElementById(`dragon_${dragon.id}_bf_atk`)?.value || 0);
+      dragon.buff.df = Number(document.getElementById(`dragon_${dragon.id}_bf_df`)?.value || 0);
+      dragon.debuff.hp = Number(document.getElementById(`dragon_${dragon.id}_db_hp`)?.value || 0);
+      dragon.debuff.atk = Number(document.getElementById(`dragon_${dragon.id}_db_atk`)?.value || 0);
+      dragon.debuff.df = Number(document.getElementById(`dragon_${dragon.id}_db_df`)?.value || 0);
+    });
+  }
+
   function calcAutoCore(){
     const resultBox = document.getElementById("autoResult");
+
+    // 0. 모든 드래곤의 정령/버프/디버프 값 동기화
+    syncAllDragonValues();
 
     // 1. 드래곤이 추가되었는지 확인
     if (AppState.dragons.length === 0) {
@@ -1491,11 +1508,10 @@
     resultBox.innerHTML = tabsHtml + panelsHtml;
   }
 
-  // 정령 값을 문자열로 포맷하는 함수
-  // 정령 슬롯별 문자열 포맷 (예: ATK(24%),DEF(28%),HP(32%),ATK(+120))
+  // 정령 슬롯별 문자열 포맷 (예: ATK(24%),DEF(28%),HP(32%),ATK(+120) / 부가옵: HP+40)
   function formatSpiritStr(spirit, spiritSlots) {
     if (!spiritSlots) return '-';
-    const parts = [];
+    const slotParts = [];
     const statNames = { hp: 'HP', atk: 'ATK', df: 'DEF' };
 
     // 슬롯 1~4 순서대로
@@ -1509,23 +1525,26 @@
 
       if (type === 'flat') {
         const value = SPIRIT_FLAT_TBL[slot][stat];
-        parts.push(`${name}(+${value})`);
+        slotParts.push(`${name}(+${value})`);
       } else if (type === 'pct') {
         const value = SPIRIT_PCT_TBL[slot][stat];
-        parts.push(`${name}(${value}%)`);
+        slotParts.push(`${name}(${value}%)`);
       }
     }
 
-    // 부가옵
+    // 부가옵 분리
+    let result = slotParts.length > 0 ? slotParts.join(',') : '-';
     const subIdx = spiritSlots.sub || 0;
     if (subIdx > 0) {
       const sub = SPIRIT_SUB_OPTIONS[subIdx];
-      if (sub.hp > 0) parts.push(`(HP+${sub.hp})`);
-      if (sub.atk > 0) parts.push(`(ATK+${sub.atk})`);
-      if (sub.df > 0) parts.push(`(DEF+${sub.df})`);
+      let subStr = '';
+      if (sub.hp > 0) subStr = `HP+${sub.hp}`;
+      if (sub.atk > 0) subStr = `ATK+${sub.atk}`;
+      if (sub.df > 0) subStr = `DEF+${sub.df}`;
+      if (subStr) result += ` / 부가옵: ${subStr}`;
     }
 
-    return parts.length > 0 ? parts.join(',') : '-';
+    return result;
   }
 
   // 결과 탭 전환
@@ -1699,6 +1718,9 @@
   // ===== Optimize 모드 계산 =====
   function calcAutoOptimizeMode(selectedAcc, gemBase, pendantCombinations, pendantVer, pendantMode, manualPendantStr, pot, col, ENCHANT, accInventoryMap) {
     const resultBox = document.getElementById("autoResult");
+
+    // 모든 드래곤의 정령/버프/디버프 값 동기화
+    syncAllDragonValues();
 
     // 각 드래곤에 대해 각 장신구의 최적 B값 계산
     const dragonAccScores = [];
