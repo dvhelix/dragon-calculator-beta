@@ -578,6 +578,13 @@
         pct: { hp: 0, atk: 0, df: 0 },
         extra: { hp: 0, atk: 0, df: 0 }
       };
+      this.spiritSlots = {
+        slot1: { stat: 'none', type: 'flat' },
+        slot2: { stat: 'none', type: 'flat' },
+        slot3: { stat: 'none', type: 'flat' },
+        slot4: { stat: 'none', type: 'flat' },
+        sub: 0
+      };
       this.buff = { hp: 0, atk: 0, df: 0 };
       this.debuff = { hp: 0, atk: 0, df: 0 };
     }
@@ -662,21 +669,25 @@
       </button>
     `).join('');
 
-    // 정령 슬롯 옵션 생성 함수
-    const slotStatOptions = `
-      <option value="none">-</option>
-      <option value="hp">HP</option>
-      <option value="atk">ATK</option>
-      <option value="df">DEF</option>
+    // 정령 슬롯 옵션 생성 함수 (저장된 값 반영)
+    const genStatOptions = (selected) => `
+      <option value="none" ${selected === 'none' ? 'selected' : ''}>-</option>
+      <option value="hp" ${selected === 'hp' ? 'selected' : ''}>HP</option>
+      <option value="atk" ${selected === 'atk' ? 'selected' : ''}>ATK</option>
+      <option value="df" ${selected === 'df' ? 'selected' : ''}>DEF</option>
     `;
-    const slotTypeOptions = `
-      <option value="flat">+</option>
-      <option value="pct">%</option>
+    const genTypeOptions = (selected) => `
+      <option value="flat" ${selected === 'flat' ? 'selected' : ''}>+</option>
+      <option value="pct" ${selected === 'pct' ? 'selected' : ''}>%</option>
     `;
-    const subOptions = SPIRIT_SUB_OPTIONS.map((opt, i) => `<option value="${i}">${opt.label}</option>`).join('');
+    const genSubOptions = (selected) => SPIRIT_SUB_OPTIONS.map((opt, i) =>
+      `<option value="${i}" ${selected === i ? 'selected' : ''}>${opt.label}</option>`
+    ).join('');
 
     // 각 드래곤별 설정 패널
-    const panelsHtml = AppState.dragons.map((d, i) => `
+    const panelsHtml = AppState.dragons.map((d, i) => {
+      const slots = d.spiritSlots || { slot1: {stat:'none',type:'flat'}, slot2: {stat:'none',type:'flat'}, slot3: {stat:'none',type:'flat'}, slot4: {stat:'none',type:'flat'}, sub: 0 };
+      return `
       <div class="dragon-settings-panel ${i === 0 ? 'active' : ''}" id="dragonPanel_${d.id}">
         <div style="background:#e3f2fd;padding:8px 12px;border-radius:6px;margin-bottom:12px;">
           <strong style="color:#1565c0;">드래곤 ${d.displayNumber}</strong>
@@ -694,27 +705,27 @@
           <div style="font-size:13px;margin-bottom:8px;color:#666;">정령 슬롯 1~4 선택:</div>
           <div style="display:grid;grid-template-columns:60px 80px 60px;gap:6px;align-items:center;margin-bottom:4px;">
             <strong>슬롯 1</strong>
-            <select id="dragon_${d.id}_slot1_stat" onchange="calculateSpiritFromSlots(${d.id})">${slotStatOptions}</select>
-            <select id="dragon_${d.id}_slot1_type" onchange="calculateSpiritFromSlots(${d.id})">${slotTypeOptions}</select>
+            <select id="dragon_${d.id}_slot1_stat" onchange="calculateSpiritFromSlots(${d.id})">${genStatOptions(slots.slot1.stat)}</select>
+            <select id="dragon_${d.id}_slot1_type" onchange="calculateSpiritFromSlots(${d.id})">${genTypeOptions(slots.slot1.type)}</select>
           </div>
           <div style="display:grid;grid-template-columns:60px 80px 60px;gap:6px;align-items:center;margin-bottom:4px;">
             <strong>슬롯 2</strong>
-            <select id="dragon_${d.id}_slot2_stat" onchange="calculateSpiritFromSlots(${d.id})">${slotStatOptions}</select>
-            <select id="dragon_${d.id}_slot2_type" onchange="calculateSpiritFromSlots(${d.id})">${slotTypeOptions}</select>
+            <select id="dragon_${d.id}_slot2_stat" onchange="calculateSpiritFromSlots(${d.id})">${genStatOptions(slots.slot2.stat)}</select>
+            <select id="dragon_${d.id}_slot2_type" onchange="calculateSpiritFromSlots(${d.id})">${genTypeOptions(slots.slot2.type)}</select>
           </div>
           <div style="display:grid;grid-template-columns:60px 80px 60px;gap:6px;align-items:center;margin-bottom:4px;">
             <strong>슬롯 3</strong>
-            <select id="dragon_${d.id}_slot3_stat" onchange="calculateSpiritFromSlots(${d.id})">${slotStatOptions}</select>
-            <select id="dragon_${d.id}_slot3_type" onchange="calculateSpiritFromSlots(${d.id})">${slotTypeOptions}</select>
+            <select id="dragon_${d.id}_slot3_stat" onchange="calculateSpiritFromSlots(${d.id})">${genStatOptions(slots.slot3.stat)}</select>
+            <select id="dragon_${d.id}_slot3_type" onchange="calculateSpiritFromSlots(${d.id})">${genTypeOptions(slots.slot3.type)}</select>
           </div>
           <div style="display:grid;grid-template-columns:60px 80px 60px;gap:6px;align-items:center;margin-bottom:8px;">
             <strong>슬롯 4</strong>
-            <select id="dragon_${d.id}_slot4_stat" onchange="calculateSpiritFromSlots(${d.id})">${slotStatOptions}</select>
-            <select id="dragon_${d.id}_slot4_type" onchange="calculateSpiritFromSlots(${d.id})">${slotTypeOptions}</select>
+            <select id="dragon_${d.id}_slot4_stat" onchange="calculateSpiritFromSlots(${d.id})">${genStatOptions(slots.slot4.stat)}</select>
+            <select id="dragon_${d.id}_slot4_type" onchange="calculateSpiritFromSlots(${d.id})">${genTypeOptions(slots.slot4.type)}</select>
           </div>
           <div style="display:grid;grid-template-columns:60px 140px;gap:6px;align-items:center;margin-bottom:8px;">
             <strong>부가옵</strong>
-            <select id="dragon_${d.id}_sub" onchange="calculateSpiritFromSlots(${d.id})">${subOptions}</select>
+            <select id="dragon_${d.id}_sub" onchange="calculateSpiritFromSlots(${d.id})">${genSubOptions(slots.sub)}</select>
           </div>
           <div id="dragon_${d.id}_spirit_summary"></div>
         </div>
@@ -755,7 +766,7 @@
           </div>
         </div>
       </div>
-    `).join('');
+    `; }).join('');
 
     container.innerHTML = `
       <div class="dragon-tabs">${tabsHtml}</div>
@@ -842,14 +853,17 @@
     let pctTotal = { hp: 0, atk: 0, df: 0 };
     let extraTotal = { hp: 0, atk: 0, df: 0 };
 
-    // 슬롯 1~4 계산
+    // 슬롯 1~4 계산 및 저장
     for (let slot = 1; slot <= 4; slot++) {
       const statEl = document.getElementById(`dragon_${dragonId}_slot${slot}_stat`);
       const typeEl = document.getElementById(`dragon_${dragonId}_slot${slot}_type`);
       if (!statEl || !typeEl) continue;
 
-      const stat = statEl.value; // hp, atk, df
+      const stat = statEl.value; // hp, atk, df, none
       const type = typeEl.value; // flat, pct
+
+      // 슬롯 선택값 저장
+      dragon.spiritSlots[`slot${slot}`] = { stat, type };
 
       if (stat && stat !== 'none') {
         if (type === 'flat') {
@@ -860,10 +874,11 @@
       }
     }
 
-    // 부가옵 계산
+    // 부가옵 계산 및 저장
     const subEl = document.getElementById(`dragon_${dragonId}_sub`);
     if (subEl) {
       const subIdx = parseInt(subEl.value) || 0;
+      dragon.spiritSlots.sub = subIdx;
       const sub = SPIRIT_SUB_OPTIONS[subIdx];
       extraTotal.hp = sub.hp;
       extraTotal.atk = sub.atk;
@@ -1408,6 +1423,7 @@
                     pct: { hp: dragonConfig.spirit.pct.hp, atk: dragonConfig.spirit.pct.atk, df: dragonConfig.spirit.pct.df },
                     extra: { hp: dragonConfig.spirit.extra.hp, atk: dragonConfig.spirit.extra.atk, df: dragonConfig.spirit.extra.df }
                   },
+                  spiritSlots: JSON.parse(JSON.stringify(dragonConfig.spiritSlots)),
                   buff: { hp: dragonConfig.buff.hp, atk: dragonConfig.buff.atk, df: dragonConfig.buff.df },
                   debuff: { hp: dragonConfig.debuff.hp, atk: dragonConfig.debuff.atk, df: dragonConfig.debuff.df }
                 });
@@ -1453,7 +1469,7 @@
       panelsHtml += `</div>`;
 
       dragonResult.results.forEach((r, i) => {
-        const spiritStr = formatSpiritStr(r.spirit);
+        const spiritStr = formatSpiritStr(r.spirit, r.spiritSlots);
         panelsHtml += `
           <div class="result-item" onclick="applyResultToManual(${dragonIdx}, ${i})"
                style="background:#f8f9fa;padding:10px 15px;border:1px solid #e0e0e0;border-top:none;cursor:pointer;transition:background 0.2s;"
@@ -1476,22 +1492,40 @@
   }
 
   // 정령 값을 문자열로 포맷하는 함수
-  function formatSpiritStr(spirit) {
-    if (!spirit) return '-';
+  // 정령 슬롯별 문자열 포맷 (예: ATK(24%),DEF(28%),HP(32%),ATK(+120))
+  function formatSpiritStr(spirit, spiritSlots) {
+    if (!spiritSlots) return '-';
     const parts = [];
-    // 플랫 값
-    if (spirit.flat.hp > 0) parts.push(`HP+${spirit.flat.hp}`);
-    if (spirit.flat.atk > 0) parts.push(`ATK+${spirit.flat.atk}`);
-    if (spirit.flat.df > 0) parts.push(`DEF+${spirit.flat.df}`);
-    // 퍼센트 값
-    if (spirit.pct.hp > 0) parts.push(`HP${spirit.pct.hp}%`);
-    if (spirit.pct.atk > 0) parts.push(`ATK${spirit.pct.atk}%`);
-    if (spirit.pct.df > 0) parts.push(`DEF${spirit.pct.df}%`);
+    const statNames = { hp: 'HP', atk: 'ATK', df: 'DEF' };
+
+    // 슬롯 1~4 순서대로
+    for (let slot = 1; slot <= 4; slot++) {
+      const slotData = spiritSlots[`slot${slot}`];
+      if (!slotData || slotData.stat === 'none') continue;
+
+      const stat = slotData.stat;
+      const type = slotData.type;
+      const name = statNames[stat] || stat.toUpperCase();
+
+      if (type === 'flat') {
+        const value = SPIRIT_FLAT_TBL[slot][stat];
+        parts.push(`${name}(+${value})`);
+      } else if (type === 'pct') {
+        const value = SPIRIT_PCT_TBL[slot][stat];
+        parts.push(`${name}(${value}%)`);
+      }
+    }
+
     // 부가옵
-    if (spirit.extra.hp > 0) parts.push(`(HP+${spirit.extra.hp})`);
-    if (spirit.extra.atk > 0) parts.push(`(ATK+${spirit.extra.atk})`);
-    if (spirit.extra.df > 0) parts.push(`(DEF+${spirit.extra.df})`);
-    return parts.length > 0 ? parts.join(' ') : '-';
+    const subIdx = spiritSlots.sub || 0;
+    if (subIdx > 0) {
+      const sub = SPIRIT_SUB_OPTIONS[subIdx];
+      if (sub.hp > 0) parts.push(`(HP+${sub.hp})`);
+      if (sub.atk > 0) parts.push(`(ATK+${sub.atk})`);
+      if (sub.df > 0) parts.push(`(DEF+${sub.df})`);
+    }
+
+    return parts.length > 0 ? parts.join(',') : '-';
   }
 
   // 결과 탭 전환
@@ -1804,7 +1838,7 @@
     assignments.forEach((assign, idx) => {
       const r = assign.bestResult;
       totalB += r.B;
-      const spiritStr = formatSpiritStr(r.spirit);
+      const spiritStr = formatSpiritStr(r.spirit, r.spiritSlots);
 
       outputHtml += `<div style="margin-bottom:15px;">`;
       outputHtml += `<div style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);color:#fff;padding:10px 15px;border-radius:8px 8px 0 0;font-weight:bold;">`;
@@ -1871,7 +1905,7 @@
           r.gems,
           r.pendant,
           r.enchant,
-          formatSpiritStr(r.spirit),
+          formatSpiritStr(r.spirit, r.spiritSlots),
           r.finalStats.hp,
           r.finalStats.atk,
           r.finalStats.df,
