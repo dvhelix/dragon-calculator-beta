@@ -548,7 +548,7 @@
       this.pendant = { hp: 0, atk: 0, df: 0 };
       this.pendantSettings = {
         ver: 'v1',           // v1: 자동, v2: 지정, v3: 수동
-        mode: '달',          // 별, 달, 태양
+        mode: '달',          // 달, 태양
         value: 12,           // 펜던트 값
         stats: ['HP', 'ATK', 'DEF']  // 지정 모드에서 선택된 스탯
       };
@@ -684,7 +684,6 @@
           </div>
           <div id="dragon_${d.id}_pendant_auto" style="${ps.ver === 'v3' ? 'display:none;' : ''}">
             <div class="row" style="margin-bottom:4px;">
-              <label><input type="radio" name="dragon_${d.id}_pendant_mode" value="별" ${ps.mode === '별' ? 'checked' : ''} onchange="updateDragonPendant(${d.id})">별</label>
               <label><input type="radio" name="dragon_${d.id}_pendant_mode" value="달" ${ps.mode === '달' ? 'checked' : ''} onchange="updateDragonPendant(${d.id})">달</label>
               <label><input type="radio" name="dragon_${d.id}_pendant_mode" value="태양" ${ps.mode === '태양' ? 'checked' : ''} onchange="updateDragonPendant(${d.id})">태양</label>
               <input id="dragon_${d.id}_pendant_value" type="number" value="${ps.value}" style="width:50px;" onchange="updateDragonPendant(${d.id})"> %
@@ -708,32 +707,32 @@
           <label><input type="radio" name="dragon_${d.id}_input_mode" value="manual" onchange="toggleSpiritInputMode(${d.id})">직접 입력</label>
         </div>
 
-        <!-- 슬롯 선택 모드 -->
+        <!-- 슬롯 선택 모드 (2x2 사분면 배치) -->
         <div id="dragon_${d.id}_slot_mode">
-          <div style="font-size:13px;margin-bottom:8px;color:#666;">정령 슬롯 1~4 선택:</div>
-          <div style="display:grid;grid-template-columns:60px 80px 60px;gap:6px;align-items:center;margin-bottom:4px;">
-            <strong>슬롯 1</strong>
-            <select id="dragon_${d.id}_slot1_stat" onchange="calculateSpiritFromSlots(${d.id})">${genStatOptions(slots.slot1.stat)}</select>
-            <select id="dragon_${d.id}_slot1_type" onchange="calculateSpiritFromSlots(${d.id})">${genTypeOptions(slots.slot1.type)}</select>
+          <div style="font-size:13px;margin-bottom:8px;color:#666;">정령 슬롯:</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;">
+            <!-- 2사분면(좌상)=슬롯1, 1사분면(우상)=슬롯2 -->
+            <div style="display:flex;gap:4px;">
+              <select id="dragon_${d.id}_slot1_stat" onchange="calculateSpiritFromSlots(${d.id})" style="flex:1;">${genStatOptions(slots.slot1.stat)}</select>
+              <select id="dragon_${d.id}_slot1_type" onchange="calculateSpiritFromSlots(${d.id})" style="width:45px;">${genTypeOptions(slots.slot1.type)}</select>
+            </div>
+            <div style="display:flex;gap:4px;">
+              <select id="dragon_${d.id}_slot2_stat" onchange="calculateSpiritFromSlots(${d.id})" style="flex:1;">${genStatOptions(slots.slot2.stat)}</select>
+              <select id="dragon_${d.id}_slot2_type" onchange="calculateSpiritFromSlots(${d.id})" style="width:45px;">${genTypeOptions(slots.slot2.type)}</select>
+            </div>
+            <!-- 3사분면(좌하)=슬롯3, 4사분면(우하)=슬롯4 -->
+            <div style="display:flex;gap:4px;">
+              <select id="dragon_${d.id}_slot3_stat" onchange="calculateSpiritFromSlots(${d.id})" style="flex:1;">${genStatOptions(slots.slot3.stat)}</select>
+              <select id="dragon_${d.id}_slot3_type" onchange="calculateSpiritFromSlots(${d.id})" style="width:45px;">${genTypeOptions(slots.slot3.type)}</select>
+            </div>
+            <div style="display:flex;gap:4px;">
+              <select id="dragon_${d.id}_slot4_stat" onchange="calculateSpiritFromSlots(${d.id})" style="flex:1;">${genStatOptions(slots.slot4.stat)}</select>
+              <select id="dragon_${d.id}_slot4_type" onchange="calculateSpiritFromSlots(${d.id})" style="width:45px;">${genTypeOptions(slots.slot4.type)}</select>
+            </div>
           </div>
-          <div style="display:grid;grid-template-columns:60px 80px 60px;gap:6px;align-items:center;margin-bottom:4px;">
-            <strong>슬롯 2</strong>
-            <select id="dragon_${d.id}_slot2_stat" onchange="calculateSpiritFromSlots(${d.id})">${genStatOptions(slots.slot2.stat)}</select>
-            <select id="dragon_${d.id}_slot2_type" onchange="calculateSpiritFromSlots(${d.id})">${genTypeOptions(slots.slot2.type)}</select>
-          </div>
-          <div style="display:grid;grid-template-columns:60px 80px 60px;gap:6px;align-items:center;margin-bottom:4px;">
-            <strong>슬롯 3</strong>
-            <select id="dragon_${d.id}_slot3_stat" onchange="calculateSpiritFromSlots(${d.id})">${genStatOptions(slots.slot3.stat)}</select>
-            <select id="dragon_${d.id}_slot3_type" onchange="calculateSpiritFromSlots(${d.id})">${genTypeOptions(slots.slot3.type)}</select>
-          </div>
-          <div style="display:grid;grid-template-columns:60px 80px 60px;gap:6px;align-items:center;margin-bottom:8px;">
-            <strong>슬롯 4</strong>
-            <select id="dragon_${d.id}_slot4_stat" onchange="calculateSpiritFromSlots(${d.id})">${genStatOptions(slots.slot4.stat)}</select>
-            <select id="dragon_${d.id}_slot4_type" onchange="calculateSpiritFromSlots(${d.id})">${genTypeOptions(slots.slot4.type)}</select>
-          </div>
-          <div style="display:grid;grid-template-columns:60px 140px;gap:6px;align-items:center;margin-bottom:8px;">
-            <strong>부가옵</strong>
-            <select id="dragon_${d.id}_sub" onchange="calculateSpiritFromSlots(${d.id})">${genSubOptions(slots.sub)}</select>
+          <div style="margin-bottom:8px;">
+            <span style="font-size:13px;color:#666;">부가옵:</span>
+            <select id="dragon_${d.id}_sub" onchange="calculateSpiritFromSlots(${d.id})" style="margin-left:6px;">${genSubOptions(slots.sub)}</select>
           </div>
           <div id="dragon_${d.id}_spirit_summary"></div>
         </div>
@@ -759,18 +758,43 @@
           </div>
         </div>
 
-        <!-- 버프/디버프 (공통) -->
+        <!-- 버프/디버프 (2x2 사분면 형태) -->
         <div style="border-top:1px solid #ddd;margin-top:12px;padding-top:12px;">
-          <div style="font-weight:bold;color:black;margin-bottom:6px;">버프 / 디버프 (%)</div>
-          <div class="row-spirit"><strong>버프 (%)</strong>
-            <input id="dragon_${d.id}_bf_hp" type="number" value="${d.buff.hp}" onchange="updateDragonSpirit(${d.id})">
-            <input id="dragon_${d.id}_bf_atk" type="number" value="${d.buff.atk}" onchange="updateDragonSpirit(${d.id})">
-            <input id="dragon_${d.id}_bf_df" type="number" value="${d.buff.df}" onchange="updateDragonSpirit(${d.id})">
-          </div>
-          <div class="row-spirit"><strong>디버프 (%)</strong>
-            <input id="dragon_${d.id}_db_hp" type="number" value="${d.debuff.hp}" onchange="updateDragonSpirit(${d.id})">
-            <input id="dragon_${d.id}_db_atk" type="number" value="${d.debuff.atk}" onchange="updateDragonSpirit(${d.id})">
-            <input id="dragon_${d.id}_db_df" type="number" value="${d.debuff.df}" onchange="updateDragonSpirit(${d.id})">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <div>
+              <div style="font-size:13px;color:#666;margin-bottom:6px;">버프 (HP/ATK/DEF)</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;">
+                <select id="dragon_${d.id}_bf_hp" onchange="updateDragonSpirit(${d.id})">
+                  <option value="0" ${d.buff.hp === 0 ? 'selected' : ''}>-</option>
+                  <option value="20" ${d.buff.hp === 20 ? 'selected' : ''}>20</option>
+                </select>
+                <select id="dragon_${d.id}_bf_atk" onchange="updateDragonSpirit(${d.id})">
+                  <option value="0" ${d.buff.atk === 0 ? 'selected' : ''}>-</option>
+                  <option value="20" ${d.buff.atk === 20 ? 'selected' : ''}>20</option>
+                </select>
+                <select id="dragon_${d.id}_bf_df" onchange="updateDragonSpirit(${d.id})">
+                  <option value="0" ${d.buff.df === 0 ? 'selected' : ''}>-</option>
+                  <option value="20" ${d.buff.df === 20 ? 'selected' : ''}>20</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <div style="font-size:13px;color:#666;margin-bottom:6px;">디버프 (HP/ATK/DEF)</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;">
+                <select id="dragon_${d.id}_db_hp" onchange="updateDragonSpirit(${d.id})">
+                  <option value="0" ${d.debuff.hp === 0 ? 'selected' : ''}>-</option>
+                  <option value="20" ${d.debuff.hp === 20 ? 'selected' : ''}>20</option>
+                </select>
+                <select id="dragon_${d.id}_db_atk" onchange="updateDragonSpirit(${d.id})">
+                  <option value="0" ${d.debuff.atk === 0 ? 'selected' : ''}>-</option>
+                  <option value="20" ${d.debuff.atk === 20 ? 'selected' : ''}>20</option>
+                </select>
+                <select id="dragon_${d.id}_db_df" onchange="updateDragonSpirit(${d.id})">
+                  <option value="0" ${d.debuff.df === 0 ? 'selected' : ''}>-</option>
+                  <option value="20" ${d.debuff.df === 20 ? 'selected' : ''}>20</option>
+                </select>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -1223,16 +1247,6 @@
     if (selectedStats.includes("ATK")) statIdx.push(1);
     if (selectedStats.includes("DEF")) statIdx.push(2);
 
-    // 별 펜던트: 1슬롯
-    if (mode === "별") {
-      const value = Math.min(total, MAX);
-      return statIdx.map(i => {
-        const slot = [0,0,0];
-        slot[i] = value;
-        return [slot];
-      });
-    }
-
     // 달 펜던트: 2슬롯
     if (mode === "달") {
       for (let x=1; x<=MAX; x++)
@@ -1316,7 +1330,7 @@
       };
     } else {
       // 자동/지정 모드
-      const maxValues = {별:6, 달:12, 태양:18};
+      const maxValues = {달:12, 태양:18};
       const limit = maxValues[mode] || 0;
       if (value > limit || value <= 0) {
         return { combinations: [], manualStr: '', ver: ver, mode: mode, error: true };
@@ -2813,32 +2827,32 @@
           <label><input type="radio" name="d${idx}_spirit_mode" value="manual" onchange="toggleManualSpiritMode(${idx})">직접 입력</label>
         </div>
 
-        <!-- 슬롯 선택 모드 -->
+        <!-- 슬롯 선택 모드 (2x2 사분면 배치) -->
         <div id="d${idx}_spirit_slot_mode">
-          <div style="font-size:13px;margin-bottom:8px;color:#666;">정령 슬롯 1~4 선택:</div>
-          <div style="display:grid;grid-template-columns:60px 80px 60px;gap:6px;align-items:center;margin-bottom:4px;">
-            <strong>슬롯 1</strong>
-            <select id="d${idx}_slot1_stat" onchange="calculateManualSpiritFromSlots(${idx})">${genManualStatOptions(dragonConfig?.spiritSlots?.slot1?.stat || 'none')}</select>
-            <select id="d${idx}_slot1_type" onchange="calculateManualSpiritFromSlots(${idx})">${genManualTypeOptions(dragonConfig?.spiritSlots?.slot1?.type || 'pct')}</select>
+          <div style="font-size:13px;margin-bottom:8px;color:#666;">정령 슬롯:</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;">
+            <!-- 2사분면(좌상)=슬롯1, 1사분면(우상)=슬롯2 -->
+            <div style="display:flex;gap:4px;">
+              <select id="d${idx}_slot1_stat" onchange="calculateManualSpiritFromSlots(${idx})" style="flex:1;">${genManualStatOptions(dragonConfig?.spiritSlots?.slot1?.stat || 'none')}</select>
+              <select id="d${idx}_slot1_type" onchange="calculateManualSpiritFromSlots(${idx})" style="width:45px;">${genManualTypeOptions(dragonConfig?.spiritSlots?.slot1?.type || 'pct')}</select>
+            </div>
+            <div style="display:flex;gap:4px;">
+              <select id="d${idx}_slot2_stat" onchange="calculateManualSpiritFromSlots(${idx})" style="flex:1;">${genManualStatOptions(dragonConfig?.spiritSlots?.slot2?.stat || 'none')}</select>
+              <select id="d${idx}_slot2_type" onchange="calculateManualSpiritFromSlots(${idx})" style="width:45px;">${genManualTypeOptions(dragonConfig?.spiritSlots?.slot2?.type || 'pct')}</select>
+            </div>
+            <!-- 3사분면(좌하)=슬롯3, 4사분면(우하)=슬롯4 -->
+            <div style="display:flex;gap:4px;">
+              <select id="d${idx}_slot3_stat" onchange="calculateManualSpiritFromSlots(${idx})" style="flex:1;">${genManualStatOptions(dragonConfig?.spiritSlots?.slot3?.stat || 'none')}</select>
+              <select id="d${idx}_slot3_type" onchange="calculateManualSpiritFromSlots(${idx})" style="width:45px;">${genManualTypeOptions(dragonConfig?.spiritSlots?.slot3?.type || 'pct')}</select>
+            </div>
+            <div style="display:flex;gap:4px;">
+              <select id="d${idx}_slot4_stat" onchange="calculateManualSpiritFromSlots(${idx})" style="flex:1;">${genManualStatOptions(dragonConfig?.spiritSlots?.slot4?.stat || 'none')}</select>
+              <select id="d${idx}_slot4_type" onchange="calculateManualSpiritFromSlots(${idx})" style="width:45px;">${genManualTypeOptions(dragonConfig?.spiritSlots?.slot4?.type || 'pct')}</select>
+            </div>
           </div>
-          <div style="display:grid;grid-template-columns:60px 80px 60px;gap:6px;align-items:center;margin-bottom:4px;">
-            <strong>슬롯 2</strong>
-            <select id="d${idx}_slot2_stat" onchange="calculateManualSpiritFromSlots(${idx})">${genManualStatOptions(dragonConfig?.spiritSlots?.slot2?.stat || 'none')}</select>
-            <select id="d${idx}_slot2_type" onchange="calculateManualSpiritFromSlots(${idx})">${genManualTypeOptions(dragonConfig?.spiritSlots?.slot2?.type || 'pct')}</select>
-          </div>
-          <div style="display:grid;grid-template-columns:60px 80px 60px;gap:6px;align-items:center;margin-bottom:4px;">
-            <strong>슬롯 3</strong>
-            <select id="d${idx}_slot3_stat" onchange="calculateManualSpiritFromSlots(${idx})">${genManualStatOptions(dragonConfig?.spiritSlots?.slot3?.stat || 'none')}</select>
-            <select id="d${idx}_slot3_type" onchange="calculateManualSpiritFromSlots(${idx})">${genManualTypeOptions(dragonConfig?.spiritSlots?.slot3?.type || 'pct')}</select>
-          </div>
-          <div style="display:grid;grid-template-columns:60px 80px 60px;gap:6px;align-items:center;margin-bottom:8px;">
-            <strong>슬롯 4</strong>
-            <select id="d${idx}_slot4_stat" onchange="calculateManualSpiritFromSlots(${idx})">${genManualStatOptions(dragonConfig?.spiritSlots?.slot4?.stat || 'none')}</select>
-            <select id="d${idx}_slot4_type" onchange="calculateManualSpiritFromSlots(${idx})">${genManualTypeOptions(dragonConfig?.spiritSlots?.slot4?.type || 'pct')}</select>
-          </div>
-          <div style="display:grid;grid-template-columns:60px 140px;gap:6px;align-items:center;margin-bottom:8px;">
-            <strong>부가옵</strong>
-            <select id="d${idx}_sub" onchange="calculateManualSpiritFromSlots(${idx})">${genManualSubOptions(dragonConfig?.spiritSlots?.sub || 0)}</select>
+          <div style="margin-bottom:8px;">
+            <span style="font-size:13px;color:#666;">부가옵:</span>
+            <select id="d${idx}_sub" onchange="calculateManualSpiritFromSlots(${idx})" style="margin-left:6px;">${genManualSubOptions(dragonConfig?.spiritSlots?.sub || 0)}</select>
           </div>
           <div id="d${idx}_spirit_summary" style="background:#f0f0f0;padding:8px;border-radius:4px;font-size:12px;color:#666;"></div>
         </div>
@@ -2864,18 +2878,25 @@
           </div>
         </div>
 
-        <!-- 버프/디버프 (항상 표시) -->
+        <!-- 버프/디버프 (2x2 형태) -->
         <div style="margin-top:12px;border-top:1px solid #eee;padding-top:10px;">
-          <div style="font-weight:700;margin-bottom:6px">(HP / ATK / DEF)</div>
-          <div class="row-spirit"><strong>버프 (%)</strong>
-            <input id="d${idx}_bf_hp" type="number" value="0">
-            <input id="d${idx}_bf_atk" type="number" value="0">
-            <input id="d${idx}_bf_df" type="number" value="0">
-          </div>
-          <div class="row-spirit"><strong>디버프 (%)</strong>
-            <input id="d${idx}_db_hp" type="number" value="0">
-            <input id="d${idx}_db_atk" type="number" value="0">
-            <input id="d${idx}_db_df" type="number" value="0">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <div>
+              <div style="font-size:13px;color:#666;margin-bottom:6px;">버프 (HP/ATK/DEF)</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;">
+                <select id="d${idx}_bf_hp"><option value="0" selected>-</option><option value="20">20</option></select>
+                <select id="d${idx}_bf_atk"><option value="0" selected>-</option><option value="20">20</option></select>
+                <select id="d${idx}_bf_df"><option value="0" selected>-</option><option value="20">20</option></select>
+              </div>
+            </div>
+            <div>
+              <div style="font-size:13px;color:#666;margin-bottom:6px;">디버프 (HP/ATK/DEF)</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;">
+                <select id="d${idx}_db_hp"><option value="0" selected>-</option><option value="20">20</option></select>
+                <select id="d${idx}_db_atk"><option value="0" selected>-</option><option value="20">20</option></select>
+                <select id="d${idx}_db_df"><option value="0" selected>-</option><option value="20">20</option></select>
+              </div>
+            </div>
           </div>
         </div>
       </fieldset>
@@ -4109,7 +4130,7 @@ function renderOneResult(idx){
                   <li><b>장신구:</b> 좌측 목록에서 계산에 포함할 장신구 체크</li>
                   <li><b>펜던트:</b> 드래곤별 탭에서 자동/지정/수동 모드 선택</li>
                   <li><b>정령:</b> 드래곤별 탭에서 슬롯별 옵션 선택 또는 직접 입력</li>
-                  <li><b>버프/디버프:</b> 드래곤별 탭에서 적용중인 % 입력</li>
+                  <li><b>버프/디버프:</b> 드래곤별 탭에서 - 또는 20 선택</li>
                 </ul>
               </div>
               <div style="background:#e3f2fd;padding:16px;border-radius:8px;">
