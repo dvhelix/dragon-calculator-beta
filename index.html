@@ -151,10 +151,6 @@
 
     .results-row{flex-direction:column;gap:14px;}
 
-    #pendant_auto_row{flex-direction:column;align-items:flex-start;}
-    #pendant_stats_row{flex-direction:column;align-items:flex-start;}
-    #pendant_manual{flex-direction:column;align-items:flex-start;gap:8px;}
-
     pre.result{font-size:12px;padding:12px;min-height:150px;overflow-x:auto;}
   }
 
@@ -372,35 +368,9 @@
           </div>
         </fieldset>
 
-        <!-- 펜던트 -->
+        <!-- 펜던트 / 정령 / 버프 / 디버프 (드래곤별 설정) -->
         <fieldset>
-          <legend>펜던트</legend>
-          <div class="row" style="margin-bottom:8px;">
-            <label><input type="radio" name="pendant_ver" value="v1" checked>자동</label>
-            <label><input type="radio" name="pendant_ver" value="v2">지정</label>
-            <label><input type="radio" name="pendant_ver" value="v3">수동</label>
-          </div>
-          <div class="row" id="pendant_auto_row">
-            <label><input type="radio" name="pendant_mode" value="별">별</label>
-            <label><input type="radio" name="pendant_mode" value="달" checked>달</label>
-            <label><input type="radio" name="pendant_mode" value="태양">태양</label>
-            <input id="pendant_value" type="number" value="12" style="width:60px;"> %
-          </div>
-          <div class="row" id="pendant_stats_row" style="margin-top:8px; display:none;">
-            <label><input type="checkbox" class="pendStat" value="HP" checked>HP</label>
-            <label><input type="checkbox" class="pendStat" value="ATK" checked>ATK</label>
-            <label><input type="checkbox" class="pendStat" value="DEF" checked>DEF</label>
-          </div>
-          <div id="pendant_manual" style="margin-top:8px; display:none;">
-            HP <input id="pend_manual_hp" type="number" value="0" style="width:50px;">%
-            ATK <input id="pend_manual_atk" type="number" value="0" style="width:50px;">%
-            DEF <input id="pend_manual_df" type="number" value="0" style="width:50px;">%
-          </div>
-        </fieldset>
-
-        <!-- 정령/버프/디버프 -->
-        <fieldset>
-          <legend>정령 / 버프 / 디버프
+          <legend>펜던트 / 정령 / 버프 / 디버프
             <button class="btn" type="button" onclick="resetAllDragonSpiritBuffs()" style="margin-left:8px;font-size:11px;padding:3px 8px;">초기화</button>
           </legend>
           <div id="dragonSpiritBuffContainer">
@@ -576,6 +546,12 @@
       this.grade = grade;      // "7.0" | "8.0" | "9.0"
       this.type = type;        // "공격형" | "방어형" | etc.
       this.pendant = { hp: 0, atk: 0, df: 0 };
+      this.pendantSettings = {
+        ver: 'v1',           // v1: 자동, v2: 지정, v3: 수동
+        mode: '달',          // 별, 달, 태양
+        value: 12,           // 펜던트 값
+        stats: ['HP', 'ATK', 'DEF']  // 지정 모드에서 선택된 스탯
+      };
       this.spirit = {
         flat: { hp: 0, atk: 0, df: 0 },
         pct: { hp: 0, atk: 0, df: 0 },
@@ -690,6 +666,7 @@
     // 각 드래곤별 설정 패널
     const panelsHtml = AppState.dragons.map((d, i) => {
       const slots = d.spiritSlots || { slot1: {stat:'none',type:'flat'}, slot2: {stat:'none',type:'flat'}, slot3: {stat:'none',type:'flat'}, slot4: {stat:'none',type:'flat'}, sub: 0 };
+      const ps = d.pendantSettings || { ver: 'v1', mode: '달', value: 12, stats: ['HP', 'ATK', 'DEF'] };
       return `
       <div class="dragon-settings-panel ${i === 0 ? 'active' : ''}" id="dragonPanel_${d.id}">
         <div style="background:#e3f2fd;padding:8px 12px;border-radius:6px;margin-bottom:12px;">
@@ -697,7 +674,35 @@
           <span style="margin-left:8px;color:#666;">(${d.grade} / ${d.type})</span>
         </div>
 
-        <!-- 입력 모드 선택 -->
+        <!-- 펜던트 설정 -->
+        <div style="border:1px solid #c8e6c9;background:#f1f8e9;padding:10px;border-radius:6px;margin-bottom:12px;">
+          <div style="font-weight:bold;color:#2e7d32;margin-bottom:8px;">펜던트</div>
+          <div class="row" style="margin-bottom:6px;">
+            <label><input type="radio" name="dragon_${d.id}_pendant_ver" value="v1" ${ps.ver === 'v1' ? 'checked' : ''} onchange="toggleDragonPendantMode(${d.id})">자동</label>
+            <label><input type="radio" name="dragon_${d.id}_pendant_ver" value="v2" ${ps.ver === 'v2' ? 'checked' : ''} onchange="toggleDragonPendantMode(${d.id})">지정</label>
+            <label><input type="radio" name="dragon_${d.id}_pendant_ver" value="v3" ${ps.ver === 'v3' ? 'checked' : ''} onchange="toggleDragonPendantMode(${d.id})">수동</label>
+          </div>
+          <div id="dragon_${d.id}_pendant_auto" style="${ps.ver === 'v3' ? 'display:none;' : ''}">
+            <div class="row" style="margin-bottom:4px;">
+              <label><input type="radio" name="dragon_${d.id}_pendant_mode" value="별" ${ps.mode === '별' ? 'checked' : ''} onchange="updateDragonPendant(${d.id})">별</label>
+              <label><input type="radio" name="dragon_${d.id}_pendant_mode" value="달" ${ps.mode === '달' ? 'checked' : ''} onchange="updateDragonPendant(${d.id})">달</label>
+              <label><input type="radio" name="dragon_${d.id}_pendant_mode" value="태양" ${ps.mode === '태양' ? 'checked' : ''} onchange="updateDragonPendant(${d.id})">태양</label>
+              <input id="dragon_${d.id}_pendant_value" type="number" value="${ps.value}" style="width:50px;" onchange="updateDragonPendant(${d.id})"> %
+            </div>
+            <div id="dragon_${d.id}_pendant_stats" class="row" style="${ps.ver === 'v1' ? 'display:none;' : ''}">
+              <label><input type="checkbox" class="dragon_${d.id}_pendStat" value="HP" ${ps.stats.includes('HP') ? 'checked' : ''} onchange="updateDragonPendant(${d.id})">HP</label>
+              <label><input type="checkbox" class="dragon_${d.id}_pendStat" value="ATK" ${ps.stats.includes('ATK') ? 'checked' : ''} onchange="updateDragonPendant(${d.id})">ATK</label>
+              <label><input type="checkbox" class="dragon_${d.id}_pendStat" value="DEF" ${ps.stats.includes('DEF') ? 'checked' : ''} onchange="updateDragonPendant(${d.id})">DEF</label>
+            </div>
+          </div>
+          <div id="dragon_${d.id}_pendant_manual" style="${ps.ver !== 'v3' ? 'display:none;' : ''}">
+            HP <input id="dragon_${d.id}_pend_hp" type="number" value="${d.pendant.hp}" style="width:45px;" onchange="updateDragonPendant(${d.id})">%
+            ATK <input id="dragon_${d.id}_pend_atk" type="number" value="${d.pendant.atk}" style="width:45px;" onchange="updateDragonPendant(${d.id})">%
+            DEF <input id="dragon_${d.id}_pend_df" type="number" value="${d.pendant.df}" style="width:45px;" onchange="updateDragonPendant(${d.id})">%
+          </div>
+        </div>
+
+        <!-- 정령 입력 모드 선택 -->
         <div class="row" style="margin-bottom:10px;">
           <label><input type="radio" name="dragon_${d.id}_input_mode" value="slot" checked onchange="toggleSpiritInputMode(${d.id})">슬롯 선택</label>
           <label><input type="radio" name="dragon_${d.id}_input_mode" value="manual" onchange="toggleSpiritInputMode(${d.id})">직접 입력</label>
@@ -827,6 +832,48 @@
     dragon.debuff.df = Number(document.getElementById(`dragon_${dragonId}_db_df`)?.value || 0);
   }
 
+  // ===== 드래곤별 펜던트 설정 함수 =====
+  function toggleDragonPendantMode(dragonId) {
+    const dragon = AppState.dragons.find(d => d.id === dragonId);
+    if (!dragon) return;
+
+    const ver = document.querySelector(`input[name="dragon_${dragonId}_pendant_ver"]:checked`)?.value || 'v1';
+    dragon.pendantSettings.ver = ver;
+
+    const autoDiv = document.getElementById(`dragon_${dragonId}_pendant_auto`);
+    const manualDiv = document.getElementById(`dragon_${dragonId}_pendant_manual`);
+    const statsDiv = document.getElementById(`dragon_${dragonId}_pendant_stats`);
+
+    if (ver === 'v3') {
+      autoDiv.style.display = 'none';
+      manualDiv.style.display = 'block';
+    } else {
+      autoDiv.style.display = 'block';
+      manualDiv.style.display = 'none';
+      statsDiv.style.display = ver === 'v2' ? 'flex' : 'none';
+    }
+
+    updateDragonPendant(dragonId);
+  }
+
+  function updateDragonPendant(dragonId) {
+    const dragon = AppState.dragons.find(d => d.id === dragonId);
+    if (!dragon) return;
+
+    const ver = document.querySelector(`input[name="dragon_${dragonId}_pendant_ver"]:checked`)?.value || 'v1';
+    dragon.pendantSettings.ver = ver;
+
+    if (ver === 'v3') {
+      dragon.pendant.hp = Number(document.getElementById(`dragon_${dragonId}_pend_hp`)?.value || 0);
+      dragon.pendant.atk = Number(document.getElementById(`dragon_${dragonId}_pend_atk`)?.value || 0);
+      dragon.pendant.df = Number(document.getElementById(`dragon_${dragonId}_pend_df`)?.value || 0);
+    } else {
+      dragon.pendantSettings.mode = document.querySelector(`input[name="dragon_${dragonId}_pendant_mode"]:checked`)?.value || '달';
+      dragon.pendantSettings.value = Number(document.getElementById(`dragon_${dragonId}_pendant_value`)?.value || 12);
+      dragon.pendantSettings.stats = Array.from(document.querySelectorAll(`.dragon_${dragonId}_pendStat:checked`)).map(cb => cb.value);
+    }
+  }
+
   // ===== 정령 슬롯별 수치 테이블 =====
   const SPIRIT_FLAT_TBL = {
     1: { hp: 216, atk: 54, df: 54 },
@@ -944,9 +991,15 @@
   // 모든 드래곤의 정령/버프/디버프 초기화
   function resetAllDragonSpiritBuffs() {
     AppState.dragons.forEach(dragon => {
+      // 펜던트 초기화
+      dragon.pendant = { hp: 0, atk: 0, df: 0 };
+      dragon.pendantSettings = { ver: 'v1', mode: '달', value: 12, stats: ['HP', 'ATK', 'DEF'] };
+      // 정령 초기화
       dragon.spirit.flat = { hp: 0, atk: 0, df: 0 };
       dragon.spirit.pct = { hp: 0, atk: 0, df: 0 };
       dragon.spirit.extra = { hp: 0, atk: 0, df: 0 };
+      dragon.spiritSlots = { slot1: {stat:'none',type:'pct'}, slot2: {stat:'none',type:'pct'}, slot3: {stat:'none',type:'pct'}, slot4: {stat:'none',type:'pct'}, sub: 0 };
+      // 버프/디버프 초기화
       dragon.buff = { hp: 0, atk: 0, df: 0 };
       dragon.debuff = { hp: 0, atk: 0, df: 0 };
     });
@@ -1157,19 +1210,6 @@
     updateSelectedAccDisplay();
   }
 
-  document.querySelectorAll('input[name="pendant_ver"]').forEach(r => {
-    r.addEventListener('change', () => {
-      const ver = document.querySelector('input[name="pendant_ver"]:checked').value;
-      document.getElementById("pendant_auto_row").style.display = (ver === "v3") ? "none" : "flex";
-      document.getElementById("pendant_stats_row").style.display = (ver === "v2") ? "flex" : "none";
-      document.getElementById("pendant_manual").style.display = (ver === "v3") ? "flex" : "none";
-    });
-  });
-  window.addEventListener("DOMContentLoaded", () => {
-    // 펜던트 버전 UI 초기화
-    document.querySelector('input[name="pendant_ver"]:checked')?.dispatchEvent(new Event('change'));
-  });
-
   // ===== 펜던트 조합 생성 =====
   function genPend(total, mode, selectedStats = ["HP","ATK","DEF"]) {
     const MAX = 6;
@@ -1237,9 +1277,12 @@
     }, 50);
   }
 
-  // 모든 드래곤의 정령/버프/디버프 값을 UI에서 읽어서 업데이트
+  // 모든 드래곤의 펜던트/정령/버프/디버프 값을 UI에서 읽어서 업데이트
   function syncAllDragonValues() {
     AppState.dragons.forEach(dragon => {
+      // 펜던트 설정 동기화
+      updateDragonPendant(dragon.id);
+      // 정령 슬롯에서 계산
       calculateSpiritFromSlots(dragon.id);
       // 버프/디버프도 UI에서 읽기
       dragon.buff.hp = Number(document.getElementById(`dragon_${dragon.id}_bf_hp`)?.value || 0);
@@ -1249,6 +1292,44 @@
       dragon.debuff.atk = Number(document.getElementById(`dragon_${dragon.id}_db_atk`)?.value || 0);
       dragon.debuff.df = Number(document.getElementById(`dragon_${dragon.id}_db_df`)?.value || 0);
     });
+  }
+
+  // 드래곤별 펜던트 조합 생성 함수
+  function getDragonPendantCombinations(dragonConfig) {
+    const ps = dragonConfig.pendantSettings;
+    const ver = ps.ver;
+    const mode = ps.mode;
+    const value = ps.value;
+    const stats = ps.stats;
+
+    if (ver === 'v3') {
+      // 수동 입력 모드
+      const ph = dragonConfig.pendant.hp / 100;
+      const pa = dragonConfig.pendant.atk / 100;
+      const pd = dragonConfig.pendant.df / 100;
+      const fmt = v => Number.isFinite(v) ? (v * 100).toFixed(0) + "%" : "0%";
+      return {
+        combinations: [[[ph, pa, pd]]],
+        manualStr: `HP${fmt(ph)} ATK${fmt(pa)} DEF${fmt(pd)}`,
+        ver: ver,
+        mode: '수동입력'
+      };
+    } else {
+      // 자동/지정 모드
+      const maxValues = {별:6, 달:12, 태양:18};
+      const limit = maxValues[mode] || 0;
+      if (value > limit || value <= 0) {
+        return { combinations: [], manualStr: '', ver: ver, mode: mode, error: true };
+      }
+      const selectedStats = (ver === 'v2') ? stats : ['HP', 'ATK', 'DEF'];
+      const combinations = genPend(value, mode, selectedStats);
+      return {
+        combinations: combinations,
+        manualStr: '',
+        ver: ver,
+        mode: mode
+      };
+    }
   }
 
   async function calcAutoCore(){
@@ -1277,47 +1358,13 @@
       return;
     }
 
-    // 4. 펜던트 설정
-    const pendantMode = document.querySelector('input[name="pendant_mode"]:checked')?.value || "달";
-    const pendantValue = Number(document.getElementById("pendant_value")?.value || 12);
-    const pendantVer = document.querySelector('input[name="pendant_ver"]:checked')?.value || "v1";
-    const selectedStats = Array.from(document.querySelectorAll('.pendStat'))
-      .filter(cb => cb.checked)
-      .map(cb => cb.value);
-
     // 상수 및 기타
     const topN = Number(document.getElementById("top_n").value || 5);
     const ENCHANT = 21;  // 인첸트 % (HP/ATK/DEF 각 방향)
     const pot = new Stats(24, 6, 6);    // 포텐셜 (고정)
     const col = new Stats(240, 60, 60); // 수집 효과 (고정)
 
-    // 5. 펜던트 조합 생성
-    let pendantCombinations = [];
-    let manualPendantStr = "";
-
-    if (pendantVer === "v3") {
-      const ph = Number(document.getElementById("pend_manual_hp")?.value || 0) / 100;
-      const pa = Number(document.getElementById("pend_manual_atk")?.value || 0) / 100;
-      const pd = Number(document.getElementById("pend_manual_df")?.value || 0) / 100;
-      pendantCombinations = [[[ph, pa, pd]]];
-      const fmt = v => Number.isFinite(v) ? (v * 100).toFixed(0) + "%" : "0%";
-      manualPendantStr = `HP${fmt(ph)} ATK${fmt(pa)} DEF${fmt(pd)}`;
-    } else {
-      const maxValues = {별:6, 달:12, 태양:18};
-      const limit = maxValues[pendantMode] || 0;
-      if (pendantValue > limit || pendantValue <= 0) {
-        resultBox.textContent = "펜던트 값을 다시 확인해주세요.";
-        return;
-      }
-      const stats = (pendantVer === "v2") ? selectedStats : ["HP", "ATK", "DEF"];
-      pendantCombinations = genPend(pendantValue, pendantMode, stats);
-      if (!pendantCombinations.length) {
-        resultBox.textContent = "펜던트 조합 생성 오류";
-        return;
-      }
-    }
-
-    // 6. 계산 모드 확인
+    // 4. 계산 모드 확인
     const calcMode = document.querySelector('input[name="calc_mode"]:checked')?.value || 'normal';
 
     // Optimize 모드: 드래곤별 최적 장신구 배분 계산
@@ -1328,7 +1375,7 @@
         const qty = Number(document.getElementById(`acc_qty_${acc.index}`)?.value || 1);
         accInventoryMap.set(acc.index, qty);
       });
-      await calcAutoOptimizeMode(selectedAcc, gemBase, pendantCombinations, pendantVer, pendantMode, manualPendantStr, pot, col, ENCHANT, accInventoryMap);
+      await calcAutoOptimizeMode(selectedAcc, gemBase, pot, col, ENCHANT, accInventoryMap);
       return;
     }
 
@@ -1337,6 +1384,16 @@
 
     AppState.dragons.forEach((dragonConfig) => {
       const baseStats = dragon[dragonConfig.grade][dragonConfig.type];
+
+      // 드래곤별 펜던트 조합 생성
+      const pendantData = getDragonPendantCombinations(dragonConfig);
+      if (pendantData.error) {
+        return; // 펜던트 설정 오류 시 해당 드래곤 스킵
+      }
+      const pendantCombinations = pendantData.combinations;
+      const pendantVer = pendantData.ver;
+      const pendantMode = pendantData.mode;
+      const manualPendantStr = pendantData.manualStr;
 
       // 드래곤별 정령/버프/디버프
       const spiritFlat = new Stats(
@@ -1760,7 +1817,7 @@
   }
 
   // ===== Optimize 모드 계산 =====
-  async function calcAutoOptimizeMode(selectedAcc, gemBase, pendantCombinations, pendantVer, pendantMode, manualPendantStr, pot, col, ENCHANT, accInventoryMap) {
+  async function calcAutoOptimizeMode(selectedAcc, gemBase, pot, col, ENCHANT, accInventoryMap) {
     const resultBox = document.getElementById("autoResult");
 
     // tqdm 스타일 진행률 표시
@@ -1775,7 +1832,7 @@
     showProgress(0);
     await delay(20);
 
-    // 모든 드래곤의 정령/버프/디버프 값 동기화
+    // 모든 드래곤의 펜던트/정령/버프/디버프 값 동기화
     syncAllDragonValues();
     showProgress(5);
     await delay(20);
@@ -1791,6 +1848,17 @@
       const spiritExtra = new Stats(dragonConfig.spirit.extra.hp, dragonConfig.spirit.extra.atk, dragonConfig.spirit.extra.df);
       const buff = new Stats(dragonConfig.buff.hp / 100, dragonConfig.buff.atk / 100, dragonConfig.buff.df / 100);
       const debuff = new Stats(dragonConfig.debuff.hp / 100, dragonConfig.debuff.atk / 100, dragonConfig.debuff.df / 100);
+
+      // 드래곤별 펜던트 조합 생성
+      const pendantData = getDragonPendantCombinations(dragonConfig);
+      if (pendantData.error) {
+        dragonAccScores.push({ dragonIdx, dragonConfig, accScores: [] });
+        continue;
+      }
+      const pendantCombinations = pendantData.combinations;
+      const pendantVer = pendantData.ver;
+      const pendantMode = pendantData.mode;
+      const manualPendantStr = pendantData.manualStr;
 
       const accScores = [];
 
@@ -2202,7 +2270,6 @@
     dragons: [],
     maxDragons: 9,
     nextId: 1,
-    accessoryAllocation: new Map(),
     selectedForResult: new Set()  // 결과에 표시할 드래곤 선택
   };
 
@@ -2501,11 +2568,6 @@
 
     const dragon = ManualDragonState.dragons[index];
     const oldDisplayNumber = dragon.displayNumber;
-
-    // 장신구 해제
-    if (dragon.accessoryId) {
-      ManualDragonState.accessoryAllocation.delete(dragon.accessoryId);
-    }
 
     ManualDragonState.dragons.splice(index, 1);
 
@@ -2832,42 +2894,24 @@
     document.getElementById(`manualPanel_${dragonIdx}`)?.classList.add('active');
   }
 
-  // 장신구 옵션 렌더링 (중복 방지 포함)
+  // 장신구 옵션 렌더링 (중복 선택 허용 - 장신구는 여러 드래곤에서 사용 가능)
   function renderAccessoryOptions(currentAccId = null) {
     return ACC_TABLE.map((acc, index) => {
       const [name, level, hp, atk, df] = acc;
       const accId = `acc_${index}`;
-      const isUsed = ManualDragonState.accessoryAllocation.has(accId) &&
-                     ManualDragonState.accessoryAllocation.get(accId) !== currentAccId;
-      const usedBy = isUsed ? ManualDragonState.accessoryAllocation.get(accId) : null;
-      const usedLabel = usedBy ? ` (드래곤 ${usedBy} 사용중)` : '';
 
-      return `<option value="${accId}" ${currentAccId === accId ? 'selected' : ''} ${isUsed ? 'disabled' : ''}>
-        ${name} Lv${level} | HP+${hp}% ATK+${atk}% DEF+${df}%${usedLabel}
+      return `<option value="${accId}" ${currentAccId === accId ? 'selected' : ''}>
+        ${name} Lv${level} | HP+${hp}% ATK+${atk}% DEF+${df}%
       </option>`;
     }).join('');
   }
 
-  // 장신구 선택 변경 시 호출
+  // 장신구 선택 변경 시 호출 (중복 선택 허용)
   function onManualAccessoryChange(dragonIdx, accId) {
     const dragon = ManualDragonState.dragons[dragonIdx - 1];
     if (!dragon) return;
 
-    // 이전 할당 해제
-    if (dragon.accessoryId) {
-      ManualDragonState.accessoryAllocation.delete(dragon.accessoryId);
-    }
-
     if (accId && accId !== '') {
-      // 중복 체크
-      if (ManualDragonState.accessoryAllocation.has(accId)) {
-        alert('이미 다른 드래곤에 장착된 장신구입니다.');
-        document.getElementById(`d${dragonIdx}_acc_select`).value = dragon.accessoryId || '';
-        return;
-      }
-
-      // 새로운 할당
-      ManualDragonState.accessoryAllocation.set(accId, dragonIdx);
       dragon.accessoryId = accId;
 
       // 장신구 값 자동 입력
@@ -2881,23 +2925,9 @@
     } else {
       dragon.accessoryId = null;
     }
-
-    // 다른 드래곤의 장신구 셀렉트 업데이트
-    updateAllAccessorySelects();
   }
 
   // 모든 장신구 셀렉트 업데이트
-  function updateAllAccessorySelects() {
-    ManualDragonState.dragons.forEach((dragon, index) => {
-      const select = document.getElementById(`d${dragon.displayNumber}_acc_select`);
-      if (select) {
-        const currentValue = select.value;
-        select.innerHTML = `<option value="">-- 장신구 선택 --</option>${renderAccessoryOptions(dragon.accessoryId)}`;
-        select.value = currentValue;
-      }
-    });
-  }
-
   function renderGems(idx){
     const c=document.getElementById(`d${idx}_gem_slots`); c.innerHTML='';
     for(let i=1;i<=5;i++){
@@ -4076,10 +4106,10 @@ function renderOneResult(idx){
                 <h4 style="margin:0 0 10px;color:#333;">3. 설정값 입력</h4>
                 <ul style="margin:0;padding-left:20px;color:#555;line-height:1.8;">
                   <li><b>젬:</b> HP/ATK/DEF 젬 개수 선택</li>
-                  <li><b>펜던트:</b> 버전/조합 선택 또는 직접 입력</li>
                   <li><b>장신구:</b> 좌측 목록에서 계산에 포함할 장신구 체크</li>
-                  <li><b>정령:</b> 슬롯별 옵션 선택 또는 직접 입력</li>
-                  <li><b>버프/디버프:</b> 적용중인 % 입력</li>
+                  <li><b>펜던트:</b> 드래곤별 탭에서 자동/지정/수동 모드 선택</li>
+                  <li><b>정령:</b> 드래곤별 탭에서 슬롯별 옵션 선택 또는 직접 입력</li>
+                  <li><b>버프/디버프:</b> 드래곤별 탭에서 적용중인 % 입력</li>
                 </ul>
               </div>
               <div style="background:#e3f2fd;padding:16px;border-radius:8px;">
