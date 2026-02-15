@@ -4475,65 +4475,98 @@ function renderOneResult(idx){
     const modalHtml = `
       <div id="helpModal" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;">
         <div style="background:#fff;border-radius:12px;max-width:800px;width:100%;max-height:90vh;overflow-y:auto;position:relative;">
-          <div style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);color:#fff;padding:20px;border-radius:12px 12px 0 0;position:sticky;top:0;z-index:1;">
-            <h2 style="margin:0;font-size:22px;">📖 드래곤 계산기 사용법</h2>
-            <button onclick="closeHelpModal()" style="position:absolute;top:15px;right:15px;background:rgba(255,255,255,0.2);border:none;color:#fff;font-size:24px;cursor:pointer;width:36px;height:36px;border-radius:50%;">×</button>
+          <div style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);color:#fff;padding:16px 20px;border-radius:12px 12px 0 0;position:sticky;top:0;z-index:1;">
+            <h2 style="margin:0;font-size:20px;">📖 드래곤 계산기 사용법</h2>
+            <button onclick="closeHelpModal()" style="position:absolute;top:12px;right:15px;background:rgba(255,255,255,0.2);border:none;color:#fff;font-size:22px;cursor:pointer;width:32px;height:32px;border-radius:50%;">×</button>
           </div>
 
-          <div style="padding:24px;">
+          <div style="padding:20px;">
+
             <!-- 자동 계산기 -->
-            <div style="margin-bottom:24px;">
-              <h3 style="color:#667eea;border-bottom:2px solid #667eea;padding-bottom:8px;margin-bottom:16px;">🔄 자동 계산기</h3>
-              <div style="background:#f8f9fa;padding:16px;border-radius:8px;margin-bottom:6px;">
-                <h4 style="margin:0 0 10px;color:#333;">1. 계산 모드 선택</h4>
-                <ul style="margin:0;padding-left:20px;color:#555;line-height:1.8;">
-                  <li><b>Normal:</b> 선택한 장신구들로 각각 계산</li>
-                  <li><b>Optimize:</b> 드래곤별 최적 장신구 자동 분배</li>
+            <div style="margin-bottom:20px;">
+              <h3 style="color:#667eea;border-bottom:2px solid #667eea;padding-bottom:6px;margin-bottom:12px;font-size:16px;">🔄 자동 계산기</h3>
+              <div style="background:#f8f9fa;padding:12px;border-radius:6px;margin-bottom:6px;">
+                <h4 style="margin:0 0 6px;color:#333;font-size:14px;">1. 계산 모드 선택</h4>
+                <ul style="margin:0;padding-left:18px;color:#555;line-height:1.7;font-size:13px;">
+                  <li><b>Normal:</b> 선택한 장신구들로 각 드래곤별 개별 계산</li>
+                  <li><b>Optimize:</b> 장신구 보유 개수를 고려한 드래곤별 최적 장신구 자동 분배</li>
                 </ul>
               </div>
-              <div style="background:#f8f9fa;padding:16px;border-radius:8px;margin-bottom:6px;">
-                <h4 style="margin:0 0 10px;color:#333;">2. 드래곤 추가</h4>
-                <ul style="margin:0;padding-left:20px;color:#555;line-height:1.8;">
-                  <li>등급(7.0/8.0/9.0)과 타입 선택 후 "드래곤 추가" 클릭</li>
-                  <li>최대 9마리까지 추가 가능</li>
-                  <li>추가된 드래곤 클릭하여 삭제 가능</li>
+              <div style="background:#f8f9fa;padding:12px;border-radius:6px;margin-bottom:6px;">
+                <h4 style="margin:0 0 6px;color:#333;font-size:14px;">2. 드래곤 추가</h4>
+                <ul style="margin:0;padding-left:18px;color:#555;line-height:1.7;font-size:13px;">
+                  <li>등급(7.0/8.0/9.0)과 타입 선택 후 <b>"추가"</b> 클릭</li>
+                  <li>최대 9마리까지 추가 가능, 삭제 버튼으로 제거</li>
                 </ul>
               </div>
-              <div style="background:#f8f9fa;padding:16px;border-radius:8px;margin-bottom:6px;">
-                <h4 style="margin:0 0 10px;color:#333;">3. 설정값 입력</h4>
-                <ul style="margin:0;padding-left:20px;color:#555;line-height:1.8;">
-                  <li><b>젬:</b> HP/ATK/DEF 젬 개수 선택</li>
-                  <li><b>장신구:</b> 좌측 목록에서 계산에 포함할 장신구 체크</li>
-                  <li><b>펜던트:</b> 드래곤별 탭에서 자동/지정/수동 모드 선택</li>
-                  <li><b>정령:</b> 드래곤별 탭에서 슬롯별 옵션 선택 또는 직접 입력</li>
-                  <li><b>버프/디버프:</b> 드래곤별 탭에서 - 또는 20 선택</li>
+              <div style="background:#f8f9fa;padding:12px;border-radius:6px;margin-bottom:6px;">
+                <h4 style="margin:0 0 6px;color:#333;font-size:14px;">3. 설정값 입력</h4>
+                <ul style="margin:0;padding-left:18px;color:#555;line-height:1.7;font-size:13px;">
+                  <li><b>젬:</b> HP/ATK/DEF 젬 수치 선택 (왼쪽 컬럼)</li>
+                  <li><b>장신구:</b> 젬 아래 목록에서 계산에 포함할 장신구 체크</li>
+                  <li><b>펜던트:</b> 가운데 컬럼 드래곤별 탭에서 자동/지정/수동 모드 선택</li>
+                  <li><b>정령:</b> 슬롯별 옵션 선택 또는 직접 입력</li>
+                  <li><b>버프/디버프:</b> - 또는 20 선택</li>
                 </ul>
               </div>
-              <div style="background:#e3f2fd;padding:16px;border-radius:8px;">
-                <h4 style="margin:0 0 10px;color:#1565c0;">💡 팁: 결과 클릭</h4>
-                <p style="margin:0;color:#555;">계산 결과를 클릭하면 해당 설정이 <b>수동 계산기</b>에 자동으로 적용됩니다!</p>
+              <div style="background:#e3f2fd;padding:10px 12px;border-radius:6px;">
+                <h4 style="margin:0 0 6px;color:#1565c0;font-size:13px;">💡 팁: 결과 클릭</h4>
+                <p style="margin:0;color:#555;font-size:13px;">계산 결과를 클릭하면 해당 설정이 <b>수동 계산기</b>에 자동으로 적용됩니다!</p>
               </div>
             </div>
 
             <!-- 수동 계산기 -->
-            <div style="margin-bottom:24px;">
-              <h3 style="color:#667eea;border-bottom:2px solid #667eea;padding-bottom:8px;margin-bottom:16px;">✏️ 수동 계산기</h3>
-              <div style="background:#f8f9fa;padding:16px;border-radius:8px;margin-bottom:6px;">
-                <ul style="margin:0;padding-left:20px;color:#555;line-height:1.8;">
-                  <li>모든 값을 직접 입력하여 계산</li>
-                  <li>자동 계산기 결과 클릭으로 값 가져오기 가능</li>
+            <div style="margin-bottom:20px;">
+              <h3 style="color:#667eea;border-bottom:2px solid #667eea;padding-bottom:6px;margin-bottom:12px;font-size:16px;">✏️ 수동 계산기</h3>
+              <div style="background:#f8f9fa;padding:12px;border-radius:6px;">
+                <ul style="margin:0;padding-left:18px;color:#555;line-height:1.7;font-size:13px;">
+                  <li>모든 값을 직접 입력하여 세밀하게 계산</li>
+                  <li>자동 계산기 결과 클릭으로 값 자동 가져오기 가능</li>
                   <li>4마리 이상일 경우 결과에 표시할 드래곤 선택 (최대 3마리)</li>
-                  <li><b>이미지 저장:</b> 계산 결과를 PNG로 저장</li>
+                  <li><b>이미지 저장:</b> 계산 결과를 PNG 이미지로 저장</li>
                   <li><b>서버 저장:</b> 결과를 서버에 저장하여 공유</li>
                 </ul>
               </div>
             </div>
 
+            <!-- 정령 예측기 -->
+            <div style="margin-bottom:20px;">
+              <h3 style="color:#667eea;border-bottom:2px solid #667eea;padding-bottom:6px;margin-bottom:12px;font-size:16px;">🔮 정령 예측기</h3>
+              <div style="background:#f8f9fa;padding:12px;border-radius:6px;margin-bottom:6px;">
+                <h4 style="margin:0 0 6px;color:#333;font-size:14px;">기능 설명</h4>
+                <p style="margin:0 0 8px;color:#555;font-size:13px;">
+                  획득한 정령을 어떤 용에 장착하면 가장 효율적인지 분석하는 기능입니다.<br>
+                  동일한 조건에서 6개 타입(공격/방어/체력/공방/체공/체방) 모두에 정령을 적용한 결과를 비교합니다.
+                </p>
+              </div>
+              <div style="background:#f8f9fa;padding:12px;border-radius:6px;margin-bottom:6px;">
+                <h4 style="margin:0 0 6px;color:#333;font-size:14px;">입력 항목</h4>
+                <ul style="margin:0;padding-left:18px;color:#555;line-height:1.7;font-size:13px;">
+                  <li><b>드래곤 등급:</b> 7.0 / 8.0 / 9.0</li>
+                  <li><b>장신구:</b> 드롭다운 선택 또는 HP/ATK/DEF % 직접 입력</li>
+                  <li><b>젬:</b> HP/ATK/DEF 젬 수치 선택</li>
+                  <li><b>인챈트:</b> HP/ATK/DEF 각각 - 또는 21 선택</li>
+                  <li><b>펜던트:</b> HP/ATK/DEF % 직접 입력</li>
+                  <li><b>정령:</b> 슬롯 선택 모드(4슬롯 + 부가옵) 또는 직접 입력</li>
+                  <li><b>버프/디버프:</b> - 또는 20 선택</li>
+                </ul>
+              </div>
+              <div style="background:#f8f9fa;padding:12px;border-radius:6px;">
+                <h4 style="margin:0 0 6px;color:#333;font-size:14px;">결과 확인</h4>
+                <ul style="margin:0;padding-left:18px;color:#555;line-height:1.7;font-size:13px;">
+                  <li>최적 드래곤 타입이 상단에 크게 표시됩니다</li>
+                  <li>6개 타입 순위표에서 HP/ATK/DEF/E-Value/B-Value 비교</li>
+                  <li>각 타입별 최적 젬 분배(5칸)도 자동으로 계산됩니다</li>
+                  <li>하단 비교 바 차트에서 B-Value 비율을 한눈에 확인</li>
+                </ul>
+              </div>
+            </div>
+
             <!-- 저장 서버 -->
-            <div style="margin-bottom:24px;">
-              <h3 style="color:#667eea;border-bottom:2px solid #667eea;padding-bottom:8px;margin-bottom:16px;">💾 저장 서버</h3>
-              <div style="background:#f8f9fa;padding:16px;border-radius:8px;">
-                <ul style="margin:0;padding-left:20px;color:#555;line-height:1.8;">
+            <div>
+              <h3 style="color:#667eea;border-bottom:2px solid #667eea;padding-bottom:6px;margin-bottom:12px;font-size:16px;">💾 저장 서버</h3>
+              <div style="background:#f8f9fa;padding:12px;border-radius:6px;">
+                <ul style="margin:0;padding-left:18px;color:#555;line-height:1.7;font-size:13px;">
                   <li><b>슬롯 생성:</b> 공개/비밀 슬롯 생성 가능</li>
                   <li><b>데이터 조회:</b> 슬롯별 저장된 데이터 확인</li>
                   <li><b>요약/상세 보기:</b> 표 형식 또는 상세 정보 확인</li>
