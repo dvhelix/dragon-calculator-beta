@@ -154,13 +154,6 @@
     pre.result{font-size:11px;padding:8px;min-height:120px;overflow-x:auto;}
   }
 
-  /* 모바일에서 세로로 쌓기 */
-  @media (max-width: 768px) {
-    #viewSlotContent div[style*="grid-template-columns:1fr 1fr 1fr 1fr"] {
-      grid-template-columns: 1fr !important;
-    }
-  }
-
   /* ===== 3단 레이아웃 ===== */
   .calc-layout {
     display: grid;
@@ -266,7 +259,6 @@
       <button class="tab-btn active" id="btnAuto">자동 계산기</button>
       <button class="tab-btn" id="btnManual">수동 계산기</button>
       <button class="tab-btn" id="btnSpirit">정령 예측기</button>
-      <button class="tab-btn" id="btnServer">저장 서버</button>
     </div>
     <div class="hint small">
       모든 입력은 <b>HP / ATK / DEF</b> 순서입니다. · made by 헬릭스
@@ -412,25 +404,9 @@
         <fieldset>
           <legend>드래곤 추가 (수동계산기)</legend>
           <div class="row">
-            <label>등급
-              <select id="add_manual_dragon_grade">
-                <option value="7.0">7.0</option>
-                <option value="8.0">8.0</option>
-                <option value="9.0" selected>9.0</option>
-              </select>
-            </label>
-            <label>타입
-              <select id="add_manual_dragon_type">
-                <option value="공격형">공격형</option>
-                <option value="방어형">방어형</option>
-                <option value="체력형">체력형</option>
-                <option value="공방형">공방형</option>
-                <option value="체공형">체공형</option>
-                <option value="체방형">체방형</option>
-              </select>
-            </label>
             <button class="btn primary" type="button" onclick="addManualDragon()">드래곤 추가</button>
             <span class="small" id="manualDragonCount">(현재: 3마리)</span>
+            <span class="small" style="color:#999;">등급/타입은 드래곤 설정에서 변경</span>
           </div>
         </fieldset>
 
@@ -449,7 +425,6 @@
           <div style="display:flex;flex-direction:column;gap:6px;">
             <button class="btn primary" onclick="manualCalcAll()" style="width:100%;">수동 계산</button>
             <button class="btn" onclick="savePngAll()" style="width:100%;">결과를 PNG로 저장</button>
-            <button class="btn" onclick="saveToServer()" style="background:#00aa88;color:#fff;border-color:#00aa88;width:100%;">서버에 저장</button>
             <button class="btn" type="button" onclick="resetFavorites()" style="background:#ff6b6b;color:#fff;border-color:#ff6b6b;width:100%;">즐겨찾기 초기화</button>
           </div>
         </fieldset>
@@ -645,72 +620,11 @@
     </div>
   </div>
 
-  <div id="serverCalc" class="calc-container">
-    <h3 style="margin:0 0 8px;font-size:14px">저장 서버</h3>
-
-    <!-- 저장 슬롯 만들기 -->
-    <fieldset>
-      <legend>저장 슬롯 만들기</legend>
-      <div class="row">
-        <label>슬롯 이름
-          <input id="newSlotName" type="text" placeholder="" style="width:200px">
-        </label>
-      </div>
-      <div class="row" style="margin-top:4px">
-        <label><input type="radio" name="slotType" value="public" checked>공유 (누구나 접근 가능)</label>
-        <label><input type="radio" name="slotType" value="private">잠금 (비밀번호 필요)</label>
-      </div>
-      <div class="row" id="slotPasswordRow" style="margin-top:4px;display:none">
-        <label>비밀번호
-          <input id="slotPassword" type="password" placeholder="비밀번호 입력" style="width:150px">
-        </label>
-      </div>
-      <div class="toolbar">
-        <button class="btn primary" onclick="createSlot()">슬롯 만들기</button>
-      </div>
-    </fieldset>
-
-    <!-- 저장된 슬롯 목록 -->
-    <fieldset>
-      <legend>저장된 슬롯 목록</legend>
-      <div id="slotList" style="min-height:120px">
-        <p style="color:#999;text-align:center;padding:20px 0">슬롯을 생성하거나 불러오는 중...</p>
-      </div>
-    </fieldset>
-  </div>
-
   <!-- html2canvas -->
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
   <!-- SheetJS (Excel 파일 생성) -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-
-  <!-- Firebase -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
-    import { getDatabase, ref, set, get, push, onValue } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyB90WAYMh6G8aWS3gzKw2wmT9X3O0zGoGw",
-      authDomain: "dragon-calculator-8733b.firebaseapp.com",
-      databaseURL: "https://dragon-calculator-8733b-default-rtdb.asia-southeast1.firebasedatabase.app",
-      projectId: "dragon-calculator-8733b",
-      storageBucket: "dragon-calculator-8733b.firebasestorage.app",
-      messagingSenderId: "707550978178",
-      appId: "1:707550978178:web:09607e55f05337c154949b"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const database = getDatabase(app);
-
-    // 전역으로 노출
-    window.firebaseDB = database;
-    window.firebaseRef = ref;
-    window.firebaseSet = set;
-    window.firebaseGet = get;
-    window.firebasePush = push;
-    window.firebaseOnValue = onValue;
-  </script>
 
   <script>
   // ===== 데이터 구조 정의 =====
@@ -2488,7 +2402,9 @@
   function saveAllManualValues() {
     ManualDragonState.dragons.forEach(dragon => {
       const idx = dragon.displayNumber;
-      const getVal = (id) => document.getElementById(id)?.value || '0';
+      // 패널이 아직 DOM에 없으면 저장하지 않음
+      if (!document.getElementById(`manualPanel_${idx}`)) return;
+      const getVal = (id) => document.getElementById(id)?.value ?? '';
 
       dragon.savedValues = {
         level: getVal(`d${idx}_m_level`),
@@ -2551,7 +2467,8 @@
       const v = dragon.savedValues;
       const setVal = (id, val) => {
         const el = document.getElementById(id);
-        if (el) el.value = val;
+        if (!el) return;
+        el.value = val;
       };
 
       setVal(`d${idx}_m_level`, v.level);
@@ -2740,10 +2657,8 @@
       return;
     }
 
-    const gradeSelect = document.getElementById('add_manual_dragon_grade');
-    const typeSelect = document.getElementById('add_manual_dragon_type');
-    const grade = gradeSelect ? gradeSelect.value : '9.0';
-    const type = typeSelect ? typeSelect.value : '공격형';
+    const grade = '9.0';
+    const type = '공격형';
 
     const newDragon = new ManualDragonConfig(ManualDragonState.nextId++, grade, type);
     newDragon.displayNumber = ManualDragonState.dragons.length + 1;
@@ -2966,9 +2881,9 @@
             <span class="small">또는 직접 입력:</span>
           </div>
           <div class="row">
-            HP <input id="d${idx}_m_acc_hp" type="number" value="0" style="width:55px">%
-            ATK <input id="d${idx}_m_acc_atk" type="number" value="0" style="width:55px">%
-            DEF <input id="d${idx}_m_acc_df" type="number" value="0" style="width:55px">%
+            HP <input id="d${idx}_m_acc_hp" type="number" value="" placeholder="-" style="width:55px">%
+            ATK <input id="d${idx}_m_acc_atk" type="number" value="" placeholder="-" style="width:55px">%
+            DEF <input id="d${idx}_m_acc_df" type="number" value="" placeholder="-" style="width:55px">%
           </div>
         </fieldset>
       </div>
@@ -2979,21 +2894,25 @@
           <div id="d${idx}_gem_slots"></div>
         </fieldset>
 
-        <fieldset>
-          <legend>인첸트 / 펜던트 (%)</legend>
-          <div class="row">
-            <strong>인첸트</strong>
-            HP <input id="d${idx}_m_ench_hp" type="number" value="0" style="width:50px">
-            ATK <input id="d${idx}_m_ench_atk" type="number" value="0" style="width:50px">
-            DEF <input id="d${idx}_m_ench_df" type="number" value="0" style="width:50px">
-          </div>
-          <div class="row" style="margin-top:3px;">
-            <strong>펜던트</strong>
-            HP <input id="d${idx}_m_pend_hp" type="number" value="0" style="width:50px">
-            ATK <input id="d${idx}_m_pend_atk" type="number" value="0" style="width:50px">
-            DEF <input id="d${idx}_m_pend_df" type="number" value="0" style="width:50px">
-          </div>
-        </fieldset>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <fieldset>
+            <legend>인챈트</legend>
+            <div class="row">
+              HP <select id="d${idx}_m_ench_hp"><option value="0" selected>-</option><option value="21">21</option></select>
+              ATK <select id="d${idx}_m_ench_atk"><option value="0" selected>-</option><option value="21">21</option></select>
+              DEF <select id="d${idx}_m_ench_df"><option value="0" selected>-</option><option value="21">21</option></select>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>펜던트 (%)</legend>
+            <div class="row">
+              HP <input id="d${idx}_m_pend_hp" type="number" value="0" style="width:50px">%
+              ATK <input id="d${idx}_m_pend_atk" type="number" value="0" style="width:50px">%
+              DEF <input id="d${idx}_m_pend_df" type="number" value="0" style="width:50px">%
+            </div>
+          </fieldset>
+        </div>
       </div>
 
       <fieldset style="margin-top:3px;">
@@ -3039,20 +2958,20 @@
         <div id="d${idx}_spirit_manual_mode" style="display:none;">
           <div style="font-weight:700;margin-bottom:3px;font-size:12px">(HP / ATK / DEF)</div>
           <div class="row-spirit"><strong>정령 + (플옵)</strong>
-            <input id="d${idx}_sf_hp" type="number" value="0">
-            <input id="d${idx}_sf_atk" type="number" value="0">
-            <input id="d${idx}_sf_df" type="number" value="0">
+            <input id="d${idx}_sf_hp" type="number" value="" placeholder="-">
+            <input id="d${idx}_sf_atk" type="number" value="" placeholder="-">
+            <input id="d${idx}_sf_df" type="number" value="" placeholder="-">
           </div>
           <div class="row-spirit"><strong>정령 % (퍼옵)</strong>
-            <input id="d${idx}_sp_hp" type="number" value="0">
-            <input id="d${idx}_sp_atk" type="number" value="0">
-            <input id="d${idx}_sp_df" type="number" value="0">
+            <input id="d${idx}_sp_hp" type="number" value="" placeholder="-">
+            <input id="d${idx}_sp_atk" type="number" value="" placeholder="-">
+            <input id="d${idx}_sp_df" type="number" value="" placeholder="-">
             <span class="small">% 입력</span>
           </div>
           <div class="row-spirit"><strong>정령 부가옵</strong>
-            <input id="d${idx}_se_hp" type="number" value="0">
-            <input id="d${idx}_se_atk" type="number" value="0">
-            <input id="d${idx}_se_df" type="number" value="0">
+            <input id="d${idx}_se_hp" type="number" value="" placeholder="-">
+            <input id="d${idx}_se_atk" type="number" value="" placeholder="-">
+            <input id="d${idx}_se_df" type="number" value="" placeholder="-">
           </div>
         </div>
 
@@ -3309,20 +3228,17 @@ function renderOneResult(idx){
   const autoDiv=document.getElementById('autoCalc');
   const manualDiv=document.getElementById('manualCalc');
   const spiritDiv=document.getElementById('spiritCalc');
-  const serverDiv=document.getElementById('serverCalc');
   const btnAuto=document.getElementById('btnAuto');
   const btnManual=document.getElementById('btnManual');
   const btnSpirit=document.getElementById('btnSpirit');
-  const btnServer=document.getElementById('btnServer');
 
   // 각 모드의 독립적인 스크롤 위치 저장
   let autoScrollPos = 0;
   let manualScrollPos = 0;
   let spiritScrollPos = 0;
-  let serverScrollPos = 0;
 
-  const allDivs = [autoDiv, manualDiv, spiritDiv, serverDiv];
-  const allBtns = [btnAuto, btnManual, btnSpirit, btnServer];
+  const allDivs = [autoDiv, manualDiv, spiritDiv];
+  const allBtns = [btnAuto, btnManual, btnSpirit];
 
   // ===== UI 모드 전환 =====
   function switchMode(mode){
@@ -3348,927 +3264,11 @@ function renderOneResult(idx){
       window.scrollTo(0, spiritScrollPos);
       spiritScrollPos = 0;
       initSpiritPredAccessories();
-    }else if(mode==='server'){
-      serverDiv.classList.add('active');
-      btnServer.classList.add('active');
-      window.scrollTo(0, serverScrollPos);
-      serverScrollPos = 0;
-      loadSlotList();
     }
   }
   btnAuto.onclick=()=>switchMode('auto');
   btnManual.onclick=()=>switchMode('manual');
   btnSpirit.onclick=()=>switchMode('spirit');
-  btnServer.onclick=()=>switchMode('server');
-
-  // 잠금/공유 선택 시 비밀번호 입력란 표시
-  document.querySelectorAll('input[name="slotType"]').forEach(radio => {
-    radio.addEventListener('change', () => {
-      const isPrivate = document.querySelector('input[name="slotType"]:checked').value === 'private';
-      document.getElementById('slotPasswordRow').style.display = isPrivate ? 'flex' : 'none';
-    });
-  });
-
-  // ===== Firebase 서버 관리 =====
-  // 비밀번호 해싱 (SHA-256)
-  async function hashPassword(password) {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(password);
-    const hash = await crypto.subtle.digest('SHA-256', data);
-    return Array.from(new Uint8Array(hash))
-      .map(b => b.toString(16).padStart(2, '0'))
-      .join('');
-  }
-
-  // 슬롯 만들기
-  async function createSlot() {
-    const name = document.getElementById('newSlotName').value.trim();
-    if (!name) {
-      alert('슬롯 이름을 입력해주세요.');
-      return;
-    }
-
-    const type = document.querySelector('input[name="slotType"]:checked').value;
-    const isPrivate = type === 'private';
-
-    let passwordHash = null;
-    if (isPrivate) {
-      const password = document.getElementById('slotPassword').value;
-      if (!password) {
-        alert('비밀번호를 입력해주세요.');
-        return;
-      }
-      passwordHash = await hashPassword(password);
-    }
-
-    const slotData = {
-      name: name,
-      type: type,
-      passwordHash: passwordHash,
-      createdAt: Date.now(),
-      data: []
-    };
-
-    try {
-      const newSlotRef = window.firebasePush(window.firebaseRef(window.firebaseDB, 'slots'));
-      await window.firebaseSet(newSlotRef, slotData);
-
-      alert(`슬롯 "${name}"이(가) 생성되었습니다!`);
-      document.getElementById('newSlotName').value = '';
-      document.getElementById('slotPassword').value = '';
-      loadSlotList();
-    } catch (error) {
-      console.error('슬롯 생성 오류:', error);
-      alert('슬롯 생성 중 오류가 발생했습니다.');
-    }
-  }
-
-  // 슬롯 목록 로드
-  function loadSlotList() {
-    const slotsRef = window.firebaseRef(window.firebaseDB, 'slots');
-    window.firebaseOnValue(slotsRef, (snapshot) => {
-      const slotListEl = document.getElementById('slotList');
-      slotListEl.innerHTML = '';
-
-      if (!snapshot.exists()) {
-        slotListEl.innerHTML = '<p style="color:#999;text-align:center;padding:40px 0">저장된 슬롯이 없습니다.</p>';
-        return;
-      }
-
-      const slots = snapshot.val();
-      Object.keys(slots).forEach(slotId => {
-        const slot = slots[slotId];
-        const slotBox = document.createElement('div');
-        slotBox.style.cssText = 'border:1px solid var(--border);background:#fff;border-radius:8px;padding:12px;margin-bottom:10px';
-
-        const lockIcon = slot.type === 'private' ? '🔒 ' : '';
-        const dataCount = slot.data ? slot.data.length : 0;
-        const createdDate = new Date(slot.createdAt).toLocaleString('ko-KR');
-
-        slotBox.innerHTML = `
-          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
-            <div style="flex:1;min-width:200px;">
-              <strong style="font-size:16px">${lockIcon} ${slot.name}</strong>
-              <div style="color:#666;font-size:12px;margin-top:4px">
-                생성일: ${createdDate} | 저장된 데이터: ${dataCount}개
-              </div>
-            </div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;">
-              <button class="btn" onclick="viewSlot('${slotId}')" style="background:#4CAF50;color:#fff;border-color:#4CAF50;">열람하기</button>
-              <button class="btn" onclick="clearSlotData('${slotId}')" style="background:#ff9800;color:#fff;border-color:#ff9800;">데이터 비우기</button>
-              <button class="btn" onclick="deleteSlot('${slotId}')" style="background:#f44336;color:#fff;border-color:#f44336;">슬롯 삭제</button>
-            </div>
-          </div>
-        `;
-        slotListEl.appendChild(slotBox);
-      });
-    });
-  }
-
-  // 슬롯 열람
-  async function viewSlot(slotId) {
-    const slotRef = window.firebaseRef(window.firebaseDB, `slots/${slotId}`);
-    const snapshot = await window.firebaseGet(slotRef);
-
-    if (!snapshot.exists()) {
-      alert('슬롯을 찾을 수 없습니다.');
-      return;
-    }
-
-    const slot = snapshot.val();
-
-    // 잠금된 슬롯은 비밀번호 확인
-    if (slot.type === 'private') {
-      const password = prompt('비밀번호를 입력하세요:');
-      if (!password) return;
-
-      const inputHash = await hashPassword(password);
-      if (inputHash !== slot.passwordHash) {
-        alert('비밀번호가 올바르지 않습니다.');
-        return;
-      }
-    }
-
-    // 데이터 표시 - 모달로 개선
-    const dataList = slot.data || [];
-    if (dataList.length === 0) {
-      alert('저장된 데이터가 없습니다.');
-      return;
-    }
-
-    // 모달 생성
-    let modalContent = `
-      <div id="viewSlotModal" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto;">
-        <div style="background:#fff;border-radius:12px;max-width:900px;width:100%;max-height:90vh;overflow-y:auto;padding:24px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;border-bottom:2px solid #ddd;padding-bottom:12px;">
-            <h3 style="margin:0;color:#111;">📁 ${slot.name}</h3>
-            <button class="btn" onclick="closeViewSlotModal()" style="padding:6px 12px;">닫기</button>
-          </div>
-
-          <!-- 상단 탭 및 검색/다운로드 -->
-          <div style="margin-bottom:16px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;">
-            <div style="display:flex;gap:8px;">
-              <button class="btn primary" id="btnDetailView" onclick="switchViewMode('detail')" style="padding:8px 16px;">상세 보기</button>
-              <button class="btn" id="btnSummaryView" onclick="switchViewMode('summary')" style="padding:8px 16px;">요약 통계</button>
-            </div>
-            <div style="display:flex;gap:8px;align-items:center;">
-              <input id="userSearchInput" type="text" placeholder="유저 검색..." style="padding:6px 12px;border:1px solid #aaa;border-radius:4px;width:150px;">
-              <button class="btn" onclick="filterByUser()" style="padding:6px 12px;">🔍 검색</button>
-              <button class="btn" id="btnExportStats" onclick="exportToExcel()" style="padding:6px 12px;background:#28a745;color:#fff;border-color:#28a745;display:none;">📊 통계 저장</button>
-            </div>
-          </div>
-
-          <div id="viewSlotContent"></div>
-          <div id="viewSlotSummary" style="display:none;"></div>
-        </div>
-      </div>
-    `;
-
-    document.body.insertAdjacentHTML('beforeend', modalContent);
-
-    // 데이터를 전역에 저장 (필터링 및 통계용)
-    window._currentSlotData = dataList;
-
-    // 상세 보기 초기 렌더링 (함수 정의 전이므로 setTimeout 사용)
-    setTimeout(() => window.renderDetailView(dataList), 0);
-  }
-
-  // 열람 모달 닫기
-  window.closeViewSlotModal = function() {
-    const modal = document.getElementById('viewSlotModal');
-    if (modal) modal.remove();
-    delete window._currentSlotData;
-    delete window._currentFilteredData;
-  }
-
-  // 뷰 모드 전환 (상세 보기 / 요약 통계)
-  window.switchViewMode = function(mode) {
-    const detailBtn = document.getElementById('btnDetailView');
-    const summaryBtn = document.getElementById('btnSummaryView');
-    const exportBtn = document.getElementById('btnExportStats');
-    const contentDiv = document.getElementById('viewSlotContent');
-    const summaryDiv = document.getElementById('viewSlotSummary');
-
-    if (mode === 'detail') {
-      detailBtn.classList.add('primary');
-      summaryBtn.classList.remove('primary');
-      contentDiv.style.display = 'block';
-      summaryDiv.style.display = 'none';
-      exportBtn.style.display = 'none';
-    } else if (mode === 'summary') {
-      detailBtn.classList.remove('primary');
-      summaryBtn.classList.add('primary');
-      contentDiv.style.display = 'none';
-      summaryDiv.style.display = 'block';
-      exportBtn.style.display = 'inline-block';
-      renderSummaryStats();
-    }
-  }
-
-  // 요약 통계 렌더링
-  window.renderSummaryStats = function() {
-    const summaryDiv = document.getElementById('viewSlotSummary');
-    const dataList = window._currentFilteredData || window._currentSlotData || [];
-
-    if (dataList.length === 0) {
-      summaryDiv.innerHTML = '<p style="text-align:center;color:#999;padding:40px 0;">표시할 데이터가 없습니다.</p>';
-      return;
-    }
-
-    // 동적 드래곤 수 계산 (첫 번째 엔트리 기준)
-    const maxDragons = Math.max(...dataList.map(entry => entry.dragons?.length || 0), 3);
-
-    let headerCols = '';
-    for (let i = 1; i <= maxDragons; i++) {
-      headerCols += `<th style="padding:12px;text-align:center;border:1px solid #ddd;">드래곤${i} (비벨)</th>`;
-    }
-
-    let summaryHtml = `
-      <div style="overflow-x:auto;">
-        <table style="width:100%;border-collapse:collapse;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,0.1);">
-          <thead>
-            <tr style="background:#2d6cdf;color:#fff;">
-              <th style="padding:12px;text-align:left;border:1px solid #ddd;">유저이름</th>
-              ${headerCols}
-              <th style="padding:12px;text-align:center;border:1px solid #ddd;">합계</th>
-            </tr>
-          </thead>
-          <tbody>
-    `;
-
-    dataList.forEach((entry, index) => {
-      const bValues = entry.dragons.map(dragon => {
-        return dragon.bValue || 0;
-      });
-
-      const total = bValues.reduce((sum, val) => sum + val, 0);
-      const rowBg = index % 2 === 0 ? '#f9f9f9' : '#fff';
-
-      let dataCols = '';
-      for (let i = 0; i < maxDragons; i++) {
-        const value = bValues[i] !== undefined ? bValues[i].toFixed(3) : '-';
-        dataCols += `<td style="padding:10px;border:1px solid #ddd;text-align:center;">${value}</td>`;
-      }
-
-      summaryHtml += `
-        <tr style="background:${rowBg};">
-          <td style="padding:10px;border:1px solid #ddd;font-weight:600;">${entry.userName}</td>
-          ${dataCols}
-          <td style="padding:10px;border:1px solid #ddd;text-align:center;font-weight:700;background:#e3f2fd;">${total.toFixed(3)}</td>
-        </tr>
-      `;
-    });
-
-    summaryHtml += `
-          </tbody>
-        </table>
-      </div>
-    `;
-
-    summaryDiv.innerHTML = summaryHtml;
-  }
-
-  // 유저 검색 필터
-  window.filterByUser = function() {
-    const searchInput = document.getElementById('userSearchInput');
-    const searchTerm = searchInput.value.trim().toLowerCase();
-
-    if (!searchTerm) {
-      // 검색어가 없으면 전체 데이터 표시
-      window._currentFilteredData = null;
-      renderDetailView(window._currentSlotData);
-      renderSummaryStats();
-      return;
-    }
-
-    // 검색어로 필터링
-    const filtered = window._currentSlotData.filter(entry =>
-      entry.userName.toLowerCase().includes(searchTerm)
-    );
-
-    if (filtered.length === 0) {
-      alert(`"${searchInput.value}" 유저를 찾을 수 없습니다.`);
-      return;
-    }
-
-    window._currentFilteredData = filtered;
-    renderDetailView(filtered);
-    renderSummaryStats();
-  }
-
-  // 상세 보기 재렌더링
-  window.renderDetailView = function(dataList) {
-    const contentDiv = document.getElementById('viewSlotContent');
-    contentDiv.innerHTML = '';
-
-    dataList.forEach((entry, index) => {
-      const entryDiv = document.createElement('div');
-      entryDiv.style.cssText = 'border:1px solid #ddd;border-radius:8px;padding:16px;margin-bottom:16px;background:#f9f9f9;';
-
-      let entryHtml = `
-        <div style="background:#2d6cdf;color:#fff;padding:8px 12px;border-radius:6px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">
-          <strong style="font-size:16px;">[${index + 1}] ${entry.userName}</strong>
-          <span style="font-size:12px;opacity:0.9;">${new Date(entry.timestamp).toLocaleString('ko-KR')}</span>
-        </div>
-      `;
-
-      entry.dragons.forEach((dragon, dragonIdx) => {
-        const dragonName = dragon.name || `드래곤 ${dragonIdx + 1}`;
-
-        // 저장된 결과값 사용
-        const finalStats = dragon.finalStats || { hp: 0, atk: 0, df: 0 };
-        const eValue = dragon.eValue || 0;
-        const bValue = dragon.bValue || 0;
-
-        entryHtml += `
-          <div style="border:1px solid #ccc;border-radius:6px;padding:12px;margin-bottom:10px;background:#fff;">
-            <h4 style="margin:0 0 10px;color:#2d6cdf;border-bottom:1px solid #eee;padding-bottom:6px;">${dragonName}</h4>
-
-            <div style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);color:#fff;padding:12px;border-radius:6px;margin-bottom:6px;">
-              <div style="font-size:14px;font-weight:700;margin-bottom:4px;">📊 최종 계산 결과</div>
-              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;font-size:13px;">
-                <div><strong>HP:</strong> ${finalStats.hp.toLocaleString()}</div>
-                <div><strong>ATK:</strong> ${finalStats.atk.toLocaleString()}</div>
-                <div><strong>DEF:</strong> ${finalStats.df.toLocaleString()}</div>
-              </div>
-              <div style="border-top:1px solid rgba(255,255,255,0.3);margin-top:8px;padding-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-                <div style="background:rgba(255,255,255,0.2);padding:6px;border-radius:4px;text-align:center;">
-                  <div style="font-size:11px;opacity:0.9;">E-Value (이벨)</div>
-                  <div style="font-size:18px;font-weight:900;">${eValue.toLocaleString()}</div>
-                </div>
-                <div style="background:rgba(255,255,255,0.2);padding:6px;border-radius:4px;text-align:center;">
-                  <div style="font-size:11px;opacity:0.9;">B-Value (비벨)</div>
-                  <div style="font-size:18px;font-weight:900;">${bValue.toFixed(3)}</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- 배치 정보 표시 -->
-            <div style="font-size:13px;display:flex;flex-direction:column;gap:8px;">
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-                <div><strong>등급/타입:</strong> ${dragon.level} / ${dragon.type}</div>
-                <div><strong>장신구:</strong> ${dragon.accessory || '-'}</div>
-              </div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-                <div><strong>젬:</strong> ${dragon.gems || '-'}</div>
-                <div><strong>인첸트:</strong> ${dragon.enchant || '-'}</div>
-              </div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-                <div><strong>펜던트:</strong> ${dragon.pendant || '-'}</div>
-                <div style="color:#9c27b0;"><strong>정령:</strong> ${dragon.spirit || '-'}</div>
-              </div>
-              ${(dragon.buff && dragon.buff !== '-') || (dragon.debuff && dragon.debuff !== '-') ? `
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-                <div style="color:#4caf50;"><strong>버프:</strong> ${dragon.buff || '-'}</div>
-                <div style="color:#f44336;"><strong>디버프:</strong> ${dragon.debuff || '-'}</div>
-              </div>
-              ` : ''}
-            </div>
-          </div>
-        `;
-      });
-
-      entryDiv.innerHTML = entryHtml;
-      contentDiv.appendChild(entryDiv);
-    });
-  }
-
-  // 엑셀 다운로드 (CSV 형식)
-  window.exportToExcel = function() {
-    const dataList = window._currentFilteredData || window._currentSlotData || [];
-
-    if (dataList.length === 0) {
-      alert('내보낼 데이터가 없습니다.');
-      return;
-    }
-
-    // 동적 드래곤 수 계산
-    const maxDragons = Math.max(...dataList.map(entry => entry.dragons?.length || 0), 3);
-
-    // CSV 헤더
-    let headerCols = [];
-    for (let i = 1; i <= maxDragons; i++) {
-      headerCols.push(`드래곤${i}`);
-    }
-    let csv = `유저이름,${headerCols.join(',')},합계\n`;
-
-    // CSV 데이터
-    dataList.forEach(entry => {
-      const bValues = entry.dragons.map(dragon => {
-        return dragon.bValue || 0;
-      });
-      const total = bValues.reduce((sum, val) => sum + val, 0);
-
-      let dataCols = [];
-      for (let i = 0; i < maxDragons; i++) {
-        const value = bValues[i] !== undefined ? bValues[i].toFixed(3) : '0.000';
-        dataCols.push(value);
-      }
-
-      csv += `${entry.userName},${dataCols.join(',')},${total.toFixed(3)}\n`;
-    });
-
-    // BOM 추가 (한글 깨짐 방지)
-    const BOM = '\uFEFF';
-    const blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `dragon_stats_${new Date().getTime()}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
-  }
-
-  // 슬롯의 데이터만 비우기 (슬롯은 유지) - 선택 삭제 방식
-  async function clearSlotData(slotId) {
-    const slotRef = window.firebaseRef(window.firebaseDB, `slots/${slotId}`);
-    const snapshot = await window.firebaseGet(slotRef);
-
-    if (!snapshot.exists()) {
-      alert('슬롯을 찾을 수 없습니다.');
-      return;
-    }
-
-    const slot = snapshot.val();
-
-    // 잠금된 슬롯은 비밀번호 확인
-    if (slot.type === 'private') {
-      const password = prompt('비밀번호를 입력하세요:');
-      if (!password) return;
-
-      const inputHash = await hashPassword(password);
-      if (inputHash !== slot.passwordHash) {
-        alert('비밀번호가 올바르지 않습니다.');
-        return;
-      }
-    }
-
-    const dataList = slot.data || [];
-    if (dataList.length === 0) {
-      alert('삭제할 데이터가 없습니다.');
-      return;
-    }
-
-    // 삭제할 데이터 선택 모달 표시
-    showDeleteSelectionModal(slotId, slot.name, dataList);
-  }
-
-  // 데이터 선택 삭제 모달
-  function showDeleteSelectionModal(slotId, slotName, dataList) {
-    const modalId = 'deleteSelectionModal';
-
-    // 기존 모달이 있으면 제거
-    const existingModal = document.getElementById(modalId);
-    if (existingModal) existingModal.remove();
-
-    const modalContent = `
-      <div id="${modalId}" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);display:flex;justify-content:center;align-items:center;z-index:9999;padding:20px;box-sizing:border-box;">
-        <div style="background:#fff;border-radius:12px;max-width:800px;width:100%;max-height:80vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 10px 40px rgba(0,0,0,0.3);">
-
-          <!-- 헤더 -->
-          <div style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);color:#fff;padding:20px;display:flex;justify-content:space-between;align-items:center;">
-            <h2 style="margin:0;font-size:20px;">🗑️ "${slotName}" 데이터 선택 삭제</h2>
-            <button onclick="document.getElementById('${modalId}').remove()" style="background:none;border:none;color:#fff;font-size:28px;cursor:pointer;padding:0;width:30px;height:30px;display:flex;align-items:center;justify-content:center;line-height:1;">&times;</button>
-          </div>
-
-          <!-- 안내 메시지 -->
-          <div style="padding:15px 20px;background:#fff3cd;border-bottom:1px solid #ffc107;color:#856404;">
-            <strong>⚠️ 주의:</strong> 선택한 데이터는 영구적으로 삭제됩니다. (총 ${dataList.length}개)
-          </div>
-
-          <!-- 전체 선택 컨트롤 -->
-          <div style="padding:15px 20px;background:#f8f9fa;border-bottom:1px solid #dee2e6;display:flex;justify-content:space-between;align-items:center;">
-            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:bold;">
-              <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll()" style="width:18px;height:18px;cursor:pointer;">
-              <span>전체 선택</span>
-            </label>
-            <span id="selectedCount" style="color:#666;font-size:14px;">선택: 0개</span>
-          </div>
-
-          <!-- 데이터 목록 -->
-          <div id="deleteDataList" style="flex:1;overflow-y:auto;padding:15px 20px;">
-            ${dataList.map((entry, index) => {
-              const timestamp = new Date(entry.timestamp).toLocaleString('ko-KR');
-              const dragonCount = entry.dragons ? entry.dragons.length : 0;
-
-              return `
-                <div style="border:1px solid #ddd;border-radius:8px;padding:12px;margin-bottom:10px;background:#f9f9f9;display:flex;align-items:center;gap:8px;">
-                  <input type="checkbox" class="data-checkbox" data-index="${index}" onchange="updateSelectedCount()" style="width:18px;height:18px;cursor:pointer;flex-shrink:0;">
-                  <div style="flex:1;">
-                    <div style="font-weight:bold;color:#2d6cdf;margin-bottom:4px;">[${index + 1}] ${entry.userName}</div>
-                    <div style="font-size:13px;color:#666;">
-                      <span>📅 ${timestamp}</span>
-                      <span style="margin-left:12px;">🐉 드래곤 ${dragonCount}마리</span>
-                    </div>
-                  </div>
-                </div>
-              `;
-            }).join('')}
-          </div>
-
-          <!-- 하단 버튼 -->
-          <div style="padding:15px 20px;background:#f8f9fa;border-top:1px solid #dee2e6;display:flex;gap:10px;justify-content:flex-end;">
-            <button onclick="document.getElementById('${modalId}').remove()" style="padding:10px 20px;background:#6c757d;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:14px;">취소</button>
-            <button onclick="executeDeleteSelected('${slotId}')" style="padding:10px 20px;background:#dc3545;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:14px;font-weight:bold;">선택 항목 삭제</button>
-          </div>
-
-        </div>
-      </div>
-    `;
-
-    document.body.insertAdjacentHTML('beforeend', modalContent);
-
-    // 전체 선택/해제 함수
-    window.toggleSelectAll = function() {
-      const selectAllCheckbox = document.getElementById('selectAllCheckbox');
-      const checkboxes = document.querySelectorAll('.data-checkbox');
-      checkboxes.forEach(cb => cb.checked = selectAllCheckbox.checked);
-      updateSelectedCount();
-    };
-
-    // 선택 개수 업데이트 함수
-    window.updateSelectedCount = function() {
-      const checkboxes = document.querySelectorAll('.data-checkbox');
-      const checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
-      document.getElementById('selectedCount').textContent = `선택: ${checkedCount}개`;
-
-      // 전체 선택 체크박스 상태 업데이트
-      const selectAllCheckbox = document.getElementById('selectAllCheckbox');
-      selectAllCheckbox.checked = checkedCount === checkboxes.length && checkedCount > 0;
-    };
-
-    // 선택 항목 삭제 실행 함수
-    window.executeDeleteSelected = async function(slotId) {
-      const checkboxes = document.querySelectorAll('.data-checkbox:checked');
-
-      if (checkboxes.length === 0) {
-        alert('삭제할 항목을 선택해주세요.');
-        return;
-      }
-
-      const selectedIndices = Array.from(checkboxes).map(cb => parseInt(cb.dataset.index));
-
-      if (!confirm(`선택한 ${selectedIndices.length}개의 데이터를 삭제하시겠습니까?\n\n⚠️ 이 작업은 되돌릴 수 없습니다.`)) {
-        return;
-      }
-
-      try {
-        // 슬롯 데이터 다시 가져오기
-        const slotRef = window.firebaseRef(window.firebaseDB, `slots/${slotId}`);
-        const snapshot = await window.firebaseGet(slotRef);
-
-        if (!snapshot.exists()) {
-          alert('슬롯을 찾을 수 없습니다.');
-          return;
-        }
-
-        const slot = snapshot.val();
-        const currentData = slot.data || [];
-
-        // 선택되지 않은 항목만 남기기 (인덱스 역순으로 정렬하여 안전하게 삭제)
-        const newData = currentData.filter((_, index) => !selectedIndices.includes(index));
-
-        // Firebase 업데이트
-        const dataRef = window.firebaseRef(window.firebaseDB, `slots/${slotId}/data`);
-        await window.firebaseSet(dataRef, newData);
-
-        alert(`${selectedIndices.length}개의 데이터가 삭제되었습니다.`);
-
-        // 모달 닫기
-        document.getElementById('deleteSelectionModal').remove();
-
-        // 슬롯 목록 새로고침
-        loadSlotList();
-      } catch (error) {
-        console.error('데이터 삭제 오류:', error);
-        alert('데이터 삭제 중 오류가 발생했습니다.');
-      }
-    };
-  }
-
-  // 슬롯 완전 삭제
-  async function deleteSlot(slotId) {
-    const slotRef = window.firebaseRef(window.firebaseDB, `slots/${slotId}`);
-    const snapshot = await window.firebaseGet(slotRef);
-
-    if (!snapshot.exists()) {
-      alert('슬롯을 찾을 수 없습니다.');
-      return;
-    }
-
-    const slot = snapshot.val();
-
-    // 잠금된 슬롯은 비밀번호 확인
-    if (slot.type === 'private') {
-      const password = prompt('비밀번호를 입력하세요:');
-      if (!password) return;
-
-      const inputHash = await hashPassword(password);
-      if (inputHash !== slot.passwordHash) {
-        alert('비밀번호가 올바르지 않습니다.');
-        return;
-      }
-    }
-
-    if (!confirm(`"${slot.name}" 슬롯을 완전히 삭제하시겠습니까?\n\n⚠️ 슬롯과 모든 데이터가 영구적으로 삭제됩니다.\n⚠️ 이 작업은 되돌릴 수 없습니다.`)) {
-      return;
-    }
-
-    // 한 번 더 확인
-    const confirmText = prompt('정말로 삭제하시려면 "삭제"를 입력하세요:');
-    if (confirmText !== '삭제') {
-      alert('삭제가 취소되었습니다.');
-      return;
-    }
-
-    try {
-      await window.firebaseSet(slotRef, null);
-      alert(`"${slot.name}" 슬롯이 삭제되었습니다.`);
-      loadSlotList();
-    } catch (error) {
-      console.error('슬롯 삭제 오류:', error);
-      alert('슬롯 삭제 중 오류가 발생했습니다.');
-    }
-  }
-
-  // 전역 함수로 노출
-  window.clearSlotData = clearSlotData;
-  window.deleteSlot = deleteSlot;
-
-  // 페이지 로드 시 슬롯 목록 자동 로드 (Firebase 초기화 후)
-  setTimeout(() => {
-    if (window.firebaseDB) {
-      loadSlotList();
-    }
-  }, 1000);
-
-  // 수동계산기 데이터를 서버에 저장
-  async function saveToServer() {
-    // 슬롯 목록 먼저 가져오기
-    const slotsRef = window.firebaseRef(window.firebaseDB, 'slots');
-    const snapshot = await window.firebaseGet(slotsRef);
-
-    if (!snapshot.exists()) {
-      alert('저장 가능한 슬롯이 없습니다.\n\n저장 서버 탭에서 슬롯을 먼저 생성해주세요.');
-      return;
-    }
-
-    const slots = snapshot.val();
-    const slotList = Object.keys(slots).map(id => ({id, ...slots[id]}));
-
-    // 2. 슬롯 선택 모달 생성
-    const modalHtml = `
-      <div id="slotSelectModal" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;">
-        <div style="background:#fff;border-radius:12px;max-width:500px;width:100%;max-height:80vh;overflow-y:auto;padding:24px;">
-          <h3 style="margin:0 0 16px;color:#111;">슬롯 선택</h3>
-
-          <div style="margin-bottom:16px;">
-            <label style="display:block;margin-bottom:6px;font-weight:700;">유저 이름</label>
-            <input id="saveUserName" type="text" placeholder="이름을 입력하세요" style="width:100%;height:36px;border:1px solid #aaa;border-radius:6px;padding:0 12px;box-sizing:border-box;">
-          </div>
-
-          <div style="margin-bottom:20px;">
-            <label style="display:block;margin-bottom:6px;font-weight:700;">저장할 슬롯</label>
-            <div id="slotSelectList" style="border:1px solid #ddd;border-radius:6px;max-height:300px;overflow-y:auto;"></div>
-          </div>
-
-          <div style="display:flex;gap:10px;justify-content:flex-end;">
-            <button class="btn" onclick="closeSlotModal()" style="padding:10px 20px;">취소</button>
-            <button class="btn primary" onclick="confirmSlotSelection()" style="padding:10px 20px;">저장</button>
-          </div>
-        </div>
-      </div>
-    `;
-
-    document.body.insertAdjacentHTML('beforeend', modalHtml);
-
-    // 3. 슬롯 목록 렌더링
-    const slotSelectList = document.getElementById('slotSelectList');
-    slotList.forEach((slot, index) => {
-      const lockIcon = slot.type === 'private' ? '🔒 ' : '';
-      const dataCount = slot.data ? slot.data.length : 0;
-
-      const slotItem = document.createElement('div');
-      slotItem.style.cssText = 'padding:12px;border-bottom:1px solid #eee;cursor:pointer;transition:background 0.2s;';
-      slotItem.innerHTML = `
-        <input type="radio" name="selectedSlot" value="${index}" id="slot_${index}" style="margin-right:8px;">
-        <label for="slot_${index}" style="cursor:pointer;display:inline;">
-          <strong>${lockIcon} ${slot.name}</strong>
-          <span style="color:#666;font-size:12px;margin-left:8px;">(${dataCount}개 저장됨)</span>
-        </label>
-      `;
-      slotItem.addEventListener('mouseover', () => slotItem.style.background = '#f5f5f5');
-      slotItem.addEventListener('mouseout', () => slotItem.style.background = '');
-      slotItem.addEventListener('click', (e) => {
-        if(e.target.tagName !== 'INPUT') {
-          document.getElementById(`slot_${index}`).checked = true;
-        }
-      });
-      slotSelectList.appendChild(slotItem);
-    });
-
-    // 슬롯 리스트를 전역에 저장
-    window._slotList = slotList;
-  }
-
-  // 모달 닫기
-  window.closeSlotModal = function() {
-    const modal = document.getElementById('slotSelectModal');
-    if (modal) modal.remove();
-    delete window._slotList;
-  }
-
-  // 슬롯 선택 확정 및 저장
-  window.confirmSlotSelection = async function() {
-    const userName = document.getElementById('saveUserName')?.value?.trim();
-    if (!userName) {
-      alert('유저 이름을 입력해주세요.');
-      return;
-    }
-
-    const selectedRadio = document.querySelector('input[name="selectedSlot"]:checked');
-    if (!selectedRadio) {
-      alert('저장할 슬롯을 선택해주세요.');
-      return;
-    }
-
-    const selectedIndex = parseInt(selectedRadio.value);
-    const selectedSlot = window._slotList[selectedIndex];
-
-    // 잠금 슬롯이면 비밀번호 확인
-    if (selectedSlot.type === 'private') {
-      const password = prompt('비밀번호를 입력하세요:');
-      if (!password) return;
-
-      const inputHash = await hashPassword(password);
-      if (inputHash !== selectedSlot.passwordHash) {
-        alert('비밀번호가 올바르지 않습니다.');
-        return;
-      }
-    }
-
-    // Helper 함수: 텍스트 값 가져오기
-    const getText = (id) => {
-      const el = document.getElementById(id);
-      return el ? el.textContent.trim() : '';
-    };
-
-    // Helper 함수: 숫자 값 가져오기
-    const getNum = (id) => {
-      const el = document.getElementById(id);
-      const text = el ? el.textContent.trim() : '0';
-      return Number(text.replace(/,/g, '')) || 0;
-    };
-
-    // 선택된 드래곤만 계산된 결과값 수집 (4마리 이상일 때는 선택된 것만, 3마리 이하면 모두)
-    const dragons = [];
-    ManualDragonState.dragons
-      .filter(d => ManualDragonState.selectedForResult.has(d.displayNumber))
-      .forEach(dragon => {
-        const i = dragon.displayNumber;
-        const getInputVal = (id) => document.getElementById(id)?.value || '0';
-
-        // 장신구 정보
-        const accSelect = document.getElementById(`d${i}_acc_select`);
-        let accessoryStr = '직접입력';
-        if (accSelect && accSelect.value && accSelect.value.startsWith('acc_')) {
-          const accIdx = parseInt(accSelect.value.replace('acc_', ''));
-          if (ACC_TABLE[accIdx]) {
-            const acc = ACC_TABLE[accIdx];
-            accessoryStr = `${acc[0]} Lv${acc[1]}`;
-          }
-        }
-        const accHp = getInputVal(`d${i}_m_acc_hp`);
-        const accAtk = getInputVal(`d${i}_m_acc_atk`);
-        const accDf = getInputVal(`d${i}_m_acc_df`);
-
-        // 젬 정보
-        const gems = [];
-        for (let slot = 1; slot <= 5; slot++) {
-          const type = getInputVal(`d${i}_slot_type_${slot}`);
-          const val = getInputVal(`d${i}_slot_val_${slot}`);
-          if (type !== 'NONE' && parseInt(val) > 0) {
-            gems.push(`${type}${val}`);
-          }
-        }
-        const gemsStr = gems.length > 0 ? gems.join(' ') : '-';
-
-        // 인첸트 정보
-        const enchHp = getInputVal(`d${i}_m_ench_hp`);
-        const enchAtk = getInputVal(`d${i}_m_ench_atk`);
-        const enchDf = getInputVal(`d${i}_m_ench_df`);
-        let enchantStr = '-';
-        if (parseInt(enchHp) > 0) enchantStr = `HP +${enchHp}%`;
-        else if (parseInt(enchAtk) > 0) enchantStr = `ATK +${enchAtk}%`;
-        else if (parseInt(enchDf) > 0) enchantStr = `DEF +${enchDf}%`;
-
-        // 펜던트 정보
-        const pendHp = getInputVal(`d${i}_m_pend_hp`);
-        const pendAtk = getInputVal(`d${i}_m_pend_atk`);
-        const pendDf = getInputVal(`d${i}_m_pend_df`);
-        const pendParts = [];
-        if (parseInt(pendHp) > 0) pendParts.push(`HP${pendHp}%`);
-        if (parseInt(pendAtk) > 0) pendParts.push(`ATK${pendAtk}%`);
-        if (parseInt(pendDf) > 0) pendParts.push(`DEF${pendDf}%`);
-        const pendantStr = pendParts.length > 0 ? pendParts.join(' ') : '-';
-
-        // 정령 정보 (슬롯별)
-        let spiritStr = '-';
-        if (dragon.spiritSlots) {
-          const slotParts = [];
-          const statNames = { hp: 'HP', atk: 'ATK', df: 'DEF' };
-          for (let slot = 1; slot <= 4; slot++) {
-            const slotData = dragon.spiritSlots[`slot${slot}`];
-            if (!slotData || slotData.stat === 'none') continue;
-            const stat = slotData.stat;
-            const type = slotData.type;
-            const name = statNames[stat] || stat.toUpperCase();
-            if (type === 'flat') {
-              const value = SPIRIT_FLAT_TBL[slot][stat];
-              slotParts.push(`${name}(+${value})`);
-            } else if (type === 'pct') {
-              const value = SPIRIT_PCT_TBL[slot][stat];
-              slotParts.push(`${name}(${value}%)`);
-            }
-          }
-          spiritStr = slotParts.length > 0 ? slotParts.join(',') : '-';
-
-          const subIdx = dragon.spiritSlots.sub || 0;
-          if (subIdx > 0) {
-            const sub = SPIRIT_SUB_OPTIONS[subIdx];
-            let subStr = '';
-            if (sub.hp > 0) subStr = `HP+${sub.hp}`;
-            if (sub.atk > 0) subStr = `ATK+${sub.atk}`;
-            if (sub.df > 0) subStr = `DEF+${sub.df}`;
-            if (subStr) spiritStr += ` / 부가옵: ${subStr}`;
-          }
-        }
-
-        // 버프/디버프 정보
-        const bfHp = getInputVal(`d${i}_bf_hp`);
-        const bfAtk = getInputVal(`d${i}_bf_atk`);
-        const bfDf = getInputVal(`d${i}_bf_df`);
-        const buffParts = [];
-        if (parseInt(bfHp) > 0) buffParts.push(`HP${bfHp}%`);
-        if (parseInt(bfAtk) > 0) buffParts.push(`ATK${bfAtk}%`);
-        if (parseInt(bfDf) > 0) buffParts.push(`DEF${bfDf}%`);
-        const buffStr = buffParts.length > 0 ? buffParts.join(' ') : '-';
-
-        const dbHp = getInputVal(`d${i}_db_hp`);
-        const dbAtk = getInputVal(`d${i}_db_atk`);
-        const dbDf = getInputVal(`d${i}_db_df`);
-        const debuffParts = [];
-        if (parseInt(dbHp) > 0) debuffParts.push(`HP${dbHp}%`);
-        if (parseInt(dbAtk) > 0) debuffParts.push(`ATK${dbAtk}%`);
-        if (parseInt(dbDf) > 0) debuffParts.push(`DEF${dbDf}%`);
-        const debuffStr = debuffParts.length > 0 ? debuffParts.join(' ') : '-';
-
-        const dragonData = {
-          level: document.getElementById(`d${i}_m_level`)?.value || '9.0',
-          type: document.getElementById(`d${i}_m_type`)?.value || '공격형',
-          // 배치 정보
-          accessory: accessoryStr,
-          accessoryStats: `HP+${accHp}% ATK+${accAtk}% DEF+${accDf}%`,
-          gems: gemsStr,
-          enchant: enchantStr,
-          pendant: pendantStr,
-          spirit: spiritStr,
-          buff: buffStr,
-          debuff: debuffStr,
-          // 계산된 최종 결과값
-          finalStats: {
-            hp: getNum(`d${i}_c_fin_hp`),
-            atk: getNum(`d${i}_c_fin_atk`),
-            df: getNum(`d${i}_c_fin_df`)
-          },
-          eValue: getNum(`d${i}_c_eval`),
-          bValue: parseFloat(getText(`d${i}_c_bval`)) || 0
-        };
-
-        dragons.push(dragonData);
-      });
-
-    // Firebase에 저장
-    const saveData = {
-      userName: userName,
-      timestamp: Date.now(),
-      dragons: dragons
-    };
-
-    try {
-      const currentData = selectedSlot.data || [];
-      currentData.push(saveData);
-
-      const slotRef = window.firebaseRef(window.firebaseDB, `slots/${selectedSlot.id}/data`);
-      await window.firebaseSet(slotRef, currentData);
-
-      closeSlotModal();
-      alert(`"${selectedSlot.name}" 슬롯에 저장되었습니다!`);
-    } catch (error) {
-      console.error('저장 오류:', error);
-      alert('저장 중 오류가 발생했습니다.');
-    }
-  }
 
   // ===== 정령 예측기 =====
   function initSpiritPredAccessories() {
@@ -4524,7 +3524,6 @@ function renderOneResult(idx){
                   <li>자동 계산기 결과 클릭으로 값 자동 가져오기 가능</li>
                   <li>4마리 이상일 경우 결과에 표시할 드래곤 선택 (최대 3마리)</li>
                   <li><b>이미지 저장:</b> 계산 결과를 PNG 이미지로 저장</li>
-                  <li><b>서버 저장:</b> 결과를 서버에 저장하여 공유</li>
                 </ul>
               </div>
             </div>
@@ -4558,19 +3557,6 @@ function renderOneResult(idx){
                   <li>6개 타입 순위표에서 HP/ATK/DEF/E-Value/B-Value 비교</li>
                   <li>각 타입별 최적 젬 분배(5칸)도 자동으로 계산됩니다</li>
                   <li>하단 비교 바 차트에서 B-Value 비율을 한눈에 확인</li>
-                </ul>
-              </div>
-            </div>
-
-            <!-- 저장 서버 -->
-            <div>
-              <h3 style="color:#667eea;border-bottom:2px solid #667eea;padding-bottom:6px;margin-bottom:12px;font-size:16px;">💾 저장 서버</h3>
-              <div style="background:#f8f9fa;padding:12px;border-radius:6px;">
-                <ul style="margin:0;padding-left:18px;color:#555;line-height:1.7;font-size:13px;">
-                  <li><b>슬롯 생성:</b> 공개/비밀 슬롯 생성 가능</li>
-                  <li><b>데이터 조회:</b> 슬롯별 저장된 데이터 확인</li>
-                  <li><b>요약/상세 보기:</b> 표 형식 또는 상세 정보 확인</li>
-                  <li><b>엑셀 저장:</b> 데이터를 엑셀 파일로 다운로드</li>
                 </ul>
               </div>
             </div>
