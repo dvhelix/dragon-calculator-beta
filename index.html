@@ -14,13 +14,13 @@
     --shadow:0 1px 2px rgba(0,0,0,0.08);
     --shadow-md:0 2px 4px rgba(0,0,0,0.08);
   }
-  body{font-family:-apple-system,BlinkMacSystemFont,"Malgun Gothic","맑은 고딕","Noto Sans KR","Apple SD Gothic Neo","Helvetica Neue",sans-serif;margin:8px 12px;background:var(--bg);color:var(--ink);line-height:1.35;font-size:13px}
-  h2{margin:0 0 2px;font-weight:700;color:var(--ink);font-size:16px}
-  .hint{color:#6b7280;margin-bottom:4px;font-size:11px}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Malgun Gothic","맑은 고딕","Noto Sans KR","Apple SD Gothic Neo","Helvetica Neue",sans-serif;margin:4px 12px;background:var(--bg);color:var(--ink);line-height:1.2;font-size:13px}
+  h2{margin:0 0 1px;font-weight:700;color:var(--ink);font-size:16px}
+  .hint{color:#6b7280;margin-bottom:2px;font-size:11px}
   .small{color:#9ca3af;font-size:11px}
 
-  .header-fixed{position:sticky;top:0;background:var(--bg);z-index:100;padding:6px 0;border-bottom:1px solid var(--border);margin-bottom:8px}
-  .modebar{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:2px}
+  .header-fixed{position:sticky;top:0;background:var(--bg);z-index:100;padding:3px 0;border-bottom:1px solid var(--border);margin-bottom:4px}
+  .modebar{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:1px}
   .tab-btn{padding:5px 14px;border:none;background:transparent;cursor:pointer;border-radius:0;font-size:13px;font-weight:500;color:#6b7280;position:relative;transition:color 0.2s}
   .tab-btn:hover{color:var(--accent);background:#f3f4f6}
   .tab-btn.active{color:var(--accent);font-weight:600}
@@ -33,9 +33,9 @@
   .calc-container{display:none;overflow-y:auto;height:100%}
   .calc-container.active{display:block}
 
-  fieldset{background:var(--card-bg);border:none;padding:10px 12px;margin-bottom:8px;border-radius:var(--radius);box-shadow:var(--shadow)}
+  fieldset{background:var(--card-bg);border:none;padding:6px 10px;margin-bottom:4px;border-radius:var(--radius);box-shadow:var(--shadow)}
   legend{font-weight:700;font-size:13px;color:var(--ink);padding:0 3px}
-  .row{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:4px}
+  .row{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:2px}
   label{display:inline-flex;gap:4px;align-items:center;cursor:pointer;font-size:13px}
   input[type="number"],select{height:28px;border:1px solid var(--border);border-radius:var(--radius-sm);text-align:center;background:#fff;font-size:12px;transition:border-color 0.2s,box-shadow 0.2s}
   input[type="number"]:focus,select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px rgba(59,130,246,0.12)}
@@ -43,8 +43,8 @@
   input[type="text"]:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px rgba(59,130,246,0.12)}
   input[type="checkbox"],input[type="radio"]{width:14px;height:14px;accent-color:var(--accent)}
 
-  .acc-list{max-height:180px;overflow:auto;border:1px solid var(--border);padding:6px 8px;background:#fff;border-radius:var(--radius-sm);font-size:12px}
-  .toolbar{display:flex;gap:6px;margin:6px 0;flex-wrap:wrap}
+  .acc-list{max-height:180px;overflow:auto;border:1px solid var(--border);padding:4px 8px;background:#fff;border-radius:var(--radius-sm);font-size:12px}
+  .toolbar{display:flex;gap:6px;margin:3px 0;flex-wrap:wrap}
 
   /* 정령/버프/디버프 */
   .row-spirit{
@@ -52,22 +52,22 @@
     grid-template-columns: 120px 70px 70px 70px auto;
     align-items:center;
     column-gap:4px;
-    margin-bottom:3px
+    margin-bottom:1px
   }
   .row-spirit strong{text-align:right;padding-right:2px;font-weight:700;font-size:12px}
 
   /* 수동결과 시트 - 밝은 테마 */
-  .results-wrap{margin-top:8px}
-  .results-row{display:inline-flex;gap:10px;align-items:flex-start;flex-wrap:nowrap}
+  .results-wrap{margin-top:4px}
+  .results-row{display:inline-flex;gap:8px;align-items:flex-start;flex-wrap:nowrap}
   .sheet{
     background:#fff; color:var(--ink);
-    padding:10px; border-radius:var(--radius);
+    padding:8px; border-radius:var(--radius);
     display:inline-block; min-width:460px;
     box-shadow:var(--shadow-md);
     border:1px solid var(--border);
   }
   .sheet .name{
-    font-weight:700; font-size:15px; letter-spacing:.3px; margin-bottom:6px; text-align:center;
+    font-weight:700; font-size:15px; letter-spacing:.3px; margin-bottom:4px; text-align:center;
     color:var(--accent);
   }
   .grid{
@@ -80,7 +80,7 @@
   }
   .cell{
     border:1px solid var(--border);
-    padding:4px 6px; line-height:1.2;
+    padding:2px 6px; line-height:1.15;
     font-size:12px; background:#fff;
     color:var(--ink);
   }
@@ -92,11 +92,11 @@
   .right{text-align:right}
   pre.result{
     white-space:pre; background:#f8fafc; color:var(--ink);
-    padding:10px; border-radius:var(--radius-sm); min-height:160px;
+    padding:6px; border-radius:var(--radius-sm); min-height:160px;
     border:1px solid var(--border);
     font-family:'Consolas',monospace;
     font-size:12px;
-    line-height:1.35;
+    line-height:1.2;
   }
 
   /* 모바일 반응형 */
@@ -588,17 +588,17 @@
             <div>
               <div style="font-size:12px;color:#666;margin-bottom:3px;">버프 (HP/ATK/DEF)</div>
               <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:3px;">
-                <select id="sp_bf_hp"><option value="0" selected>-</option><option value="20">20</option></select>
-                <select id="sp_bf_atk"><option value="0" selected>-</option><option value="20">20</option></select>
-                <select id="sp_bf_df"><option value="0" selected>-</option><option value="20">20</option></select>
+                <select id="sp_bf_hp"><option value="0" selected>-</option><option value="20">20</option><option value="40">40</option></select>
+                <select id="sp_bf_atk"><option value="0" selected>-</option><option value="20">20</option><option value="40">40</option></select>
+                <select id="sp_bf_df"><option value="0" selected>-</option><option value="20">20</option><option value="40">40</option></select>
               </div>
             </div>
             <div>
               <div style="font-size:12px;color:#666;margin-bottom:3px;">디버프 (HP/ATK/DEF)</div>
               <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:3px;">
-                <select id="sp_db_hp"><option value="0" selected>-</option><option value="20">20</option></select>
-                <select id="sp_db_atk"><option value="0" selected>-</option><option value="20">20</option></select>
-                <select id="sp_db_df"><option value="0" selected>-</option><option value="20">20</option></select>
+                <select id="sp_db_hp"><option value="0" selected>-</option><option value="20">20</option><option value="40">40</option></select>
+                <select id="sp_db_atk"><option value="0" selected>-</option><option value="20">20</option><option value="40">40</option></select>
+                <select id="sp_db_df"><option value="0" selected>-</option><option value="20">20</option><option value="40">40</option></select>
               </div>
             </div>
           </div>
@@ -859,14 +859,17 @@
                 <select id="dragon_${d.id}_bf_hp" onchange="updateDragonSpirit(${d.id})">
                   <option value="0" ${d.buff.hp === 0 ? 'selected' : ''}>-</option>
                   <option value="20" ${d.buff.hp === 20 ? 'selected' : ''}>20</option>
+                  <option value="40" ${d.buff.hp === 40 ? 'selected' : ''}>40</option>
                 </select>
                 <select id="dragon_${d.id}_bf_atk" onchange="updateDragonSpirit(${d.id})">
                   <option value="0" ${d.buff.atk === 0 ? 'selected' : ''}>-</option>
                   <option value="20" ${d.buff.atk === 20 ? 'selected' : ''}>20</option>
+                  <option value="40" ${d.buff.atk === 40 ? 'selected' : ''}>40</option>
                 </select>
                 <select id="dragon_${d.id}_bf_df" onchange="updateDragonSpirit(${d.id})">
                   <option value="0" ${d.buff.df === 0 ? 'selected' : ''}>-</option>
                   <option value="20" ${d.buff.df === 20 ? 'selected' : ''}>20</option>
+                  <option value="40" ${d.buff.df === 40 ? 'selected' : ''}>40</option>
                 </select>
               </div>
             </div>
@@ -876,14 +879,17 @@
                 <select id="dragon_${d.id}_db_hp" onchange="updateDragonSpirit(${d.id})">
                   <option value="0" ${d.debuff.hp === 0 ? 'selected' : ''}>-</option>
                   <option value="20" ${d.debuff.hp === 20 ? 'selected' : ''}>20</option>
+                  <option value="40" ${d.debuff.hp === 40 ? 'selected' : ''}>40</option>
                 </select>
                 <select id="dragon_${d.id}_db_atk" onchange="updateDragonSpirit(${d.id})">
                   <option value="0" ${d.debuff.atk === 0 ? 'selected' : ''}>-</option>
                   <option value="20" ${d.debuff.atk === 20 ? 'selected' : ''}>20</option>
+                  <option value="40" ${d.debuff.atk === 40 ? 'selected' : ''}>40</option>
                 </select>
                 <select id="dragon_${d.id}_db_df" onchange="updateDragonSpirit(${d.id})">
                   <option value="0" ${d.debuff.df === 0 ? 'selected' : ''}>-</option>
                   <option value="20" ${d.debuff.df === 20 ? 'selected' : ''}>20</option>
+                  <option value="40" ${d.debuff.df === 40 ? 'selected' : ''}>40</option>
                 </select>
               </div>
             </div>
@@ -1648,7 +1654,7 @@
 
     allResults.forEach((dragonResult, dragonIdx) => {
       panelsHtml += `<div class="dragon-settings-panel ${dragonIdx === 0 ? 'active' : ''}" id="resultPanel_${dragonIdx}">`;
-      panelsHtml += `<div style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);color:#fff;padding:10px 15px;border-radius:8px 8px 0 0;font-weight:bold;">`;
+      panelsHtml += `<div style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);color:#fff;padding:6px 15px;border-radius:8px 8px 0 0;font-weight:bold;">`;
       panelsHtml += `★ 드래곤 ${dragonResult.dragonNumber} (${dragonResult.dragonGrade} / ${dragonResult.dragonType})`;
       panelsHtml += `</div>`;
 
@@ -1672,13 +1678,13 @@
 
         panelsHtml += `
           <div class="result-item" onclick="applyResultToManual(${dragonIdx}, ${i})"
-               style="background:#f8f9fa;padding:10px 15px;border:1px solid #e0e0e0;border-top:none;cursor:pointer;transition:background 0.2s;"
+               style="background:#f8f9fa;padding:5px 15px;border:1px solid #e0e0e0;border-top:none;cursor:pointer;transition:background 0.2s;line-height:1.25;"
                onmouseover="this.style.background='#e3f2fd'" onmouseout="this.style.background='#f8f9fa'">
             <div style="font-weight:600;color:#1565c0;">[${i + 1}위] ${r.dragonType} | ${r.accessory}</div>
             <div style="font-size:13px;color:#666;">젬: ${r.gems} | 펜던트: ${r.pendant} | 인첸트: ${r.enchant}</div>
             <div style="font-size:13px;color:#9c27b0;">정령: ${spiritStr}</div>
             ${hasBuffDebuff ? `<div style="font-size:13px;"><span style="color:#4caf50;">버프: ${buffStr}</span> | <span style="color:#f44336;">디버프: ${debuffStr}</span></div>` : ''}
-            <div style="font-size:13px;margin-top:4px;">
+            <div style="font-size:13px;margin-top:2px;">
               HP=<strong>${r.finalStats.hp}</strong> | ATK=<strong>${r.finalStats.atk}</strong> | DEF=<strong>${r.finalStats.df}</strong> |
               E=<strong>${r.eValue.toFixed(0)}</strong> | B=<strong style="color:#d32f2f;">${(r.B/1e6).toFixed(3)}</strong>
             </div>
@@ -2225,19 +2231,19 @@
 
       const hasBuffDebuff = buffStr !== '-' || debuffStr !== '-';
 
-      outputHtml += `<div style="margin-bottom:15px;">`;
-      outputHtml += `<div style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);color:#fff;padding:10px 15px;border-radius:8px 8px 0 0;font-weight:bold;">`;
+      outputHtml += `<div style="margin-bottom:8px;">`;
+      outputHtml += `<div style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);color:#fff;padding:6px 15px;border-radius:8px 8px 0 0;font-weight:bold;">`;
       outputHtml += `★ 드래곤 ${r.dragonNumber} (${r.dragonGrade} / ${r.dragonType})`;
       outputHtml += `</div>`;
       outputHtml += `
         <div class="result-item" onclick="applyResultToManual(${idx}, 0)"
-             style="background:#f8f9fa;padding:10px 15px;border:1px solid #e0e0e0;border-top:none;cursor:pointer;transition:background 0.2s;"
+             style="background:#f8f9fa;padding:5px 15px;border:1px solid #e0e0e0;border-top:none;cursor:pointer;transition:background 0.2s;line-height:1.25;"
              onmouseover="this.style.background='#e3f2fd'" onmouseout="this.style.background='#f8f9fa'">
           <div style="font-weight:600;color:#1565c0;">[최적] ${r.dragonType} | ${r.accessory}</div>
           <div style="font-size:13px;color:#666;">젬: ${r.gems} | 펜던트: ${r.pendant} | 인첸트: ${r.enchant}</div>
           <div style="font-size:13px;color:#9c27b0;">정령: ${spiritStr}</div>
           ${hasBuffDebuff ? `<div style="font-size:13px;"><span style="color:#4caf50;">버프: ${buffStr}</span> | <span style="color:#f44336;">디버프: ${debuffStr}</span></div>` : ''}
-          <div style="font-size:13px;margin-top:4px;">
+          <div style="font-size:13px;margin-top:2px;">
             HP=<strong>${r.finalStats.hp}</strong> | ATK=<strong>${r.finalStats.atk}</strong> | DEF=<strong>${r.finalStats.df}</strong> |
             E=<strong>${r.eValue.toFixed(0)}</strong> | B=<strong style="color:#d32f2f;">${(r.B/1e6).toFixed(3)}</strong>
           </div>
@@ -2981,17 +2987,17 @@
             <div>
               <div style="font-size:12px;color:#666;margin-bottom:3px;">버프 (HP/ATK/DEF)</div>
               <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;">
-                <select id="d${idx}_bf_hp"><option value="0" selected>-</option><option value="20">20</option></select>
-                <select id="d${idx}_bf_atk"><option value="0" selected>-</option><option value="20">20</option></select>
-                <select id="d${idx}_bf_df"><option value="0" selected>-</option><option value="20">20</option></select>
+                <select id="d${idx}_bf_hp"><option value="0" selected>-</option><option value="20">20</option><option value="40">40</option></select>
+                <select id="d${idx}_bf_atk"><option value="0" selected>-</option><option value="20">20</option><option value="40">40</option></select>
+                <select id="d${idx}_bf_df"><option value="0" selected>-</option><option value="20">20</option><option value="40">40</option></select>
               </div>
             </div>
             <div>
               <div style="font-size:12px;color:#666;margin-bottom:3px;">디버프 (HP/ATK/DEF)</div>
               <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;">
-                <select id="d${idx}_db_hp"><option value="0" selected>-</option><option value="20">20</option></select>
-                <select id="d${idx}_db_atk"><option value="0" selected>-</option><option value="20">20</option></select>
-                <select id="d${idx}_db_df"><option value="0" selected>-</option><option value="20">20</option></select>
+                <select id="d${idx}_db_hp"><option value="0" selected>-</option><option value="20">20</option><option value="40">40</option></select>
+                <select id="d${idx}_db_atk"><option value="0" selected>-</option><option value="20">20</option><option value="40">40</option></select>
+                <select id="d${idx}_db_df"><option value="0" selected>-</option><option value="20">20</option><option value="40">40</option></select>
               </div>
             </div>
           </div>
@@ -3506,7 +3512,7 @@ function renderOneResult(idx){
                   <li><b>장신구:</b> 젬 아래 목록에서 계산에 포함할 장신구 체크</li>
                   <li><b>펜던트:</b> 가운데 컬럼 드래곤별 탭에서 자동/지정/수동 모드 선택</li>
                   <li><b>정령:</b> 슬롯별 옵션 선택 또는 직접 입력</li>
-                  <li><b>버프/디버프:</b> - 또는 20 선택</li>
+                  <li><b>버프/디버프:</b> - 또는 20/40 선택</li>
                 </ul>
               </div>
               <div style="background:#e3f2fd;padding:10px 12px;border-radius:6px;">
@@ -3547,7 +3553,7 @@ function renderOneResult(idx){
                   <li><b>인챈트:</b> HP/ATK/DEF 각각 - 또는 21 선택</li>
                   <li><b>펜던트:</b> HP/ATK/DEF % 직접 입력</li>
                   <li><b>정령:</b> 슬롯 선택 모드(4슬롯 + 부가옵) 또는 직접 입력</li>
-                  <li><b>버프/디버프:</b> - 또는 20 선택</li>
+                  <li><b>버프/디버프:</b> - 또는 20/40 선택</li>
                 </ul>
               </div>
               <div style="background:#f8f9fa;padding:12px;border-radius:6px;">
